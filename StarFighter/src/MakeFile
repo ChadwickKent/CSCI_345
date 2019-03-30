@@ -1,0 +1,5 @@
+SDLPATH		=C:\Users\chadk\Desktop\StarFighter\SDL2-2.0.9\i686-w64-mingw32
+IncludePath	=$(SDLPATH)\include\SDL2
+LDPATH		=$(SDLPATH)\
+
+
