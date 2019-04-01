@@ -190,25 +190,25 @@ class Sprite {
 };
 
 int collision(Sprite *A, Sprite *B){
-	if(Player->weapon == 2) {
-		
-	} else {
-		if(A->posX > B->posX && A->posX < (B->posX + B->w) && A->posY > B->posY && A->posY < (B->posY + B->h)) {
-			A->alive = false;
-			B->alive = false;
-		}
-		if((A->posX + A->w) > B->posX && (A->posX + A->w) < (B->posX + B->w) && A->posY > B->posY && A->posY < (B->posY + B->h)) {
-			A->alive = false;
-			B->alive = false;
-		}
-		if(A->posX > B->posX && A->posX < (B->posX + B->w) && (A->posY + A->h) > B->posY && (A->posY + A->h) < (B->posY + B->h)) {
-			A->alive = false;
-			B->alive = false;
-		}
-		if((A->posX + A->w) > B->posX && (A->posX + A->w) < (B->posX + B->w) && (A->posY + A->h) > B->posY && (A->posY + A->h) < (B->posY + B->h)) {
-			A->alive = false;
-			B->alive = false;
-		}
+	if(A->posX > B->posX && A->posX < (B->posX + B->w) && A->posY > B->posY && A->posY < (B->posY + B->h)) {
+		A->alive = false;
+		B->alive = false;
+	}
+	if((A->posX + A->w) > B->posX && (A->posX + A->w) < (B->posX + B->w) && A->posY > B->posY && A->posY < (B->posY + B->h)) {
+		A->alive = false;
+		B->alive = false;
+	}
+	if(A->posX > B->posX && A->posX < (B->posX + B->w) && (A->posY + A->h) > B->posY && (A->posY + A->h) < (B->posY + B->h)) {
+		A->alive = false;
+		B->alive = false;
+	}
+	if((A->posX + A->w) > B->posX && (A->posX + A->w) < (B->posX + B->w) && (A->posY + A->h) > B->posY && (A->posY + A->h) < (B->posY + B->h)) {
+		A->alive = false;
+		B->alive = false;
+	}
+	if(A->posX < B->posX && (A->posX + A->w) > (B->posX + B->w) && A->posY > B->posY && (A->posY + A->h) < (B->posY + B->h)) {
+		A->alive = false;
+		B->alive = false;
 	}
 	if(B->alive == false)
 		return 250;
@@ -424,6 +424,8 @@ class NewGame:public Game {
 				} else if(room == "level") {
 					if(!(step % 30)) //enemy drift
 						dir *= -1;
+					else if(!(step % 60))
+						dir *= 1;
 					if(!(step % 146)) { //active enemy event
 						if(hero < 24) {
 							if(hero == 0) //return
@@ -521,9 +523,15 @@ class NewGame:public Game {
 						}
 					for (int i = 0; i < troops; i++)
 						if(grunt[i]->alive == true)
-							if(i != hero)
-								if(!(step % 3))
-									grunt[i]->posX += 1 * dir;
+							if(i != hero) {
+								if(spawning < 100) {
+									
+									//325 + ((i * 40) - (320 * (i / 8))), 70 + (42 * (i / 8))
+								} else {
+									if(!(step % 3))
+										grunt[i]->posX += 1 * dir;
+								}
+							}
 					for (int i = 0; i < rAmmo; i++) {
 						if(rockets[i]->active == true)
 							rockets[i]->posY -= 6;
