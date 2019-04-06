@@ -61,6 +61,8 @@ class Game {
 
 class Image { // images are used for any static image (doesn't need to check for collision -chad)
 	SDL_Texture *texture;
+	int xPos;	// Added these X and Y positions for the checking collision with the mouse -Joey
+	int yPos;
 	protected:
 		SDL_Rect src;
 	public:
@@ -82,10 +84,18 @@ class Image { // images are used for any static image (doesn't need to check for
 			SDL_QueryTexture(texture, NULL, NULL, &(src.w), &(src.h));
 			src.x = 0;
 			src.y = 0;
+			xPos = 0;
+			yPos = 0;
 			SDL_FreeSurface(surface);
 		}
 		SDL_Rect getSize() {
 			return src;
+		}
+		int getX() {
+			return xPos;
+		}
+		int getY() {
+			return yPos;
 		}
 		void render(Game *game, int x = 0, int y = 0) {
 			SDL_Rect dest;
@@ -93,6 +103,8 @@ class Image { // images are used for any static image (doesn't need to check for
 			dest.h = src.h;
 			dest.x = x;
 			dest.y = y;
+			xPos = x;
+			yPos = y;
 			SDL_Renderer *renderer= game->getRenderer();
 			SDL_RenderCopy(renderer, texture, &src, &dest);
 		}
@@ -215,6 +227,22 @@ int collision(Sprite *A, Sprite *B){
 	else
 		return 0;
 };
+
+bool mouseCollision(Image *button, SDL_Event event) { // Checks if Mouse is over the Button -Joey
+	int x, y;
+	int ins = true;
+	SDL_GetMouseState(&x, &y);
+	if (x < button->getX()){
+		ins = false;
+	} else if (x > button->getX() + button->getSize().w) {
+		ins = false;
+	} else if (y < button->getY()) {
+		ins = false;
+	} else if (y > button->getY() + button->getSize().h) {
+		ins = false;
+	}
+	return ins;
+}
 
 void swap(SDL_Event event, SDL_Keycode key, int num,vector <Sprite *> ship, Sprite *player, Sprite *temp) {
 	if(event.key.keysym.sym == key && ship[num]->active == false && ship[num]->alive == true) {
@@ -410,6 +438,11 @@ class NewGame:public Game {
 										ship[i]->alive = false;
 						}
 					}
+					// Button Mouse Event
+					if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN)
+						if (mouseCollision(playButton, event))
+							if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT)
+								room = "level";
 				const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
 				if(room == "level") {
 					if(currentKeyStates[SDL_SCANCODE_RIGHT])
@@ -676,7 +709,7 @@ class NewGame:public Game {
 						for(int i = 0; i < 10; i++)
 							if(charge >= i + 1)
 								energy[i]->render(this, 181 - (i * 9), 351);
-					}`
+					}
 					for(int i = 0; i < rAmmo; i++)
 						if(rockets[i]->active == true)
 							if(rockets[i]->alive == true)
