@@ -301,7 +301,7 @@ class NewGame:public Game {
 			}
 			beam = new Sprite(this, file + "beam.bmp", -10, 0);
 			for (int i = 0; i < troops; i++) {
-				Sprite *enemy = new Sprite(this, file + "grunt.bmp", 325 + ((i * 40) - (320 * (i / 8))), 70 + (42 * (i / 8)));
+				Sprite *enemy = new Sprite(this, file + "grunt.bmp", 325 + ((i * 40) - (320 * (i / 8))), -230 + (42 * (i / 8)));
 				grunt.push_back(enemy);
 			}
 			for (int i = 0; i < troops; i++) {
@@ -314,11 +314,13 @@ class NewGame:public Game {
 			unsigned start = SDL_GetTicks();
 			bool running = true;
 			bool paused = false;
+			bool reset = false;
 			string room = "title";
 			string ph = "level";
 			int step = 0;			//ticks
 			int screenScroll = 0;
 			int dir = 1;			//direction
+			int offset = 0;
 			int score = 0;
 			int respawn = 30;
 			int charge = 10;
@@ -326,6 +328,7 @@ class NewGame:public Game {
 			int spawning = 0;
 			int dig = 0;			//digit
 			int hero = 24;			//active enemy ship
+			int wave = 1;
 			int gameOver = 0;
 			
 			//initialize weapon testing
@@ -422,29 +425,23 @@ class NewGame:public Game {
 					title->render(this, 259, 112);
 					playButton->render(this, 399, 300);
 				} else if(room == "level") {
-					if(!(step % 30)) //enemy drift
-						dir *= -1;
-					else if(!(step % 60))
+					if(!(step % 60)) //enemy drift
 						dir *= 1;
+					else if(!(step % 30))
+						dir *= -1;
 					if(!(step % 146)) { //active enemy event
 						if(hero < 24) {
-							if(hero == 0) //return
-								grunt[hero]->posX = grunt[1]->posX - 40;
-							else
-								grunt[hero]->posX = grunt[0]->posX + ((hero * 40) - (320 * (hero / 8)));
+							grunt[hero]->posX = (325 + ((hero * 40) - (320 * (hero / 8)))) + offset; //return
 							grunt[hero]->posY = 70 + (42 * (hero / 8));
 						}
-						if(spawning > 500) {
-							cout << "working" << endl;
+						if(spawning > 360) {
 							for(int i = 0; i < 30; i++) {
 								hero = rand() % 24; //new active enemy
 								if(grunt[hero]->alive == true)
 									break;
 							}
-						} else {
+						} else
 							hero = 24;
-							cout << 24;
-						}
 					}
 					if(!(step % 50)) { //rocket respawn
 						for(int i = 0; i < rAmmo; i++) {
@@ -489,21 +486,12 @@ class NewGame:public Game {
 									}
 							}
 							if(grunt[hero]->posY < (70 + (42 * (hero / 8))) || grunt[hero]->posY > 480) {
-								if(hero == 0) {
-									if(grunt[hero]->posX < (grunt[1]->posX - 40) && grunt[hero]->posX < (grunt[1]->posX - 40))
-										grunt[hero]->posX += 4;
-									else if(grunt[hero]->posX > (grunt[1]->posX - 40) && grunt[hero]->posX > (grunt[1]->posX - 30))
-										grunt[hero]->posX -= 4;
-									if(grunt[hero]->posX > (grunt[1]->posX - 40) && grunt[hero]->posX < (grunt[1]->posX - 40))
-										grunt[hero]->posX = grunt[1]->posX - 40;
-								} else {
-									if(grunt[hero]->posX < (grunt[0]->posX + ((hero * 40) - (320 * (hero / 8)))) && grunt[hero]->posX < (grunt[0]->posX + ((hero * 40) - (320 * (hero / 8)))) + 10)
-										grunt[hero]->posX += 4;
-									else if(grunt[hero]->posX > (grunt[0]->posX + ((hero * 40) - (320 * (hero / 8)))) && grunt[hero]->posX > (grunt[0]->posX + ((hero * 40) - (320 * (hero / 8)))) + 10)
-										grunt[hero]->posX -= 4;
-									if(grunt[hero]->posX > (grunt[0]->posX + ((hero * 40) - (320 * (hero / 8)))) && grunt[hero]->posX < (grunt[0]->posX + ((hero * 40) - (320 * (hero / 8)))) + 10)
-										grunt[hero]->posX = grunt[0]->posX + ((hero * 40) - (320 * (hero / 8)));
-								}
+								if(grunt[hero]->posX < ((325 + ((hero * 40) - (320 * (hero / 8)))) + offset))
+									grunt[hero]->posX += 4;
+								else if(grunt[hero]->posX > ((325 + ((hero * 40) - (320 * (hero / 8)))) + offset))
+									grunt[hero]->posX -= 4;
+								if(grunt[hero]->posX > ((325 + ((hero * 40) - (320 * (hero / 8)))) + offset - 6) && grunt[hero]->posX < ((325 + ((hero * 40) - (320 * (hero / 8)))) + offset + 6))
+									grunt[hero]->posX = (325 + ((hero * 40) - (320 * (hero / 8)))) + offset;
 							}
 						} //end of path
 						if(hero < 24) {
@@ -524,9 +512,118 @@ class NewGame:public Game {
 					for (int i = 0; i < troops; i++)
 						if(grunt[i]->alive == true)
 							if(i != hero) {
-								if(spawning < 100) {
-									
-									//325 + ((i * 40) - (320 * (i / 8))), 70 + (42 * (i / 8))
+								if(spawning < 360) { //spawn path
+									if(i < 8) {
+										if(i < 4) {
+											if(spawning == 0) {
+												grunt[i]->posX = 239; //closest 40p off screen
+												grunt[i]->posY = 360;
+											} else if(spawning > 0 + (i * 6) && spawning < 90 + (i * 6)) {
+												grunt[i]->posX += 4;
+												grunt[i]->posY -= 2;
+											} else if(spawning > 0 + (i * 6) && spawning < 160 + (i * 6)) {
+												if(grunt[i]->posX > ((325 + (i * 40)) - 6) && grunt[i]->posX < ((325 + (i * 40)) + 6))
+													grunt[i]->posX = 325 + (i * 40);
+												else 
+													grunt[i]->posX -= 4;
+												if(grunt[i]->posY > 70)
+													grunt[i]->posY -= 2;
+												else
+													grunt[i]->posY = 70;
+											}
+										} else {
+											if(spawning == 0) {
+												grunt[i]->posX = 700; //closest 40p off screen
+												grunt[i]->posY = 360;
+											} else if(spawning > 0 + ((i - 4) * 6) && spawning < 90 + ((i - 4) * 6)) {
+												grunt[i]->posX -= 4;
+												grunt[i]->posY -= 2;
+											} else if(spawning > 0 + ((i - 4) * 6) && spawning < 160 + ((i - 4) * 6)) {
+												if(grunt[i]->posX > ((325 + (i * 40)) - 6) && grunt[i]->posX < ((325 + (i * 40)) + 6))
+													grunt[i]->posX = 325 + (i * 40);
+												else
+													grunt[i]->posX += 4;
+												if(grunt[i]->posY > 70)
+													grunt[i]->posY -= 2;
+												else
+													grunt[i]->posY = 70;
+											}
+										}
+									}
+									if(i < 16 && i > 7) {
+										if(i < 12) {
+											if(spawning == 0) {
+												grunt[i]->posX = 239; //closest 30p off screen
+												grunt[i]->posY = 400;
+											} else if(spawning > 60 + ((i - 8) * 6) && spawning < 150 + ((i - 8) * 6)) {
+												grunt[i]->posX += 4;
+												grunt[i]->posY -= 2;
+											} else if(spawning > 60 + ((i - 8) * 6) && spawning < 220 + ((i - 8) * 6)) {
+												if(grunt[i]->posX > ((325 + ((i - 8) * 40)) - 6) && grunt[i]->posX < ((325 + ((i - 8) * 40)) + 6))
+													grunt[i]->posX = 325 + ((i - 8) * 40);
+												else
+													grunt[i]->posX -= 4;
+												if(grunt[i]->posY > 112)
+													grunt[i]->posY -= 2;
+												else
+													grunt[i]->posY = 112;
+											}
+										} else {
+											if(spawning == 0) {
+												grunt[i]->posX = 700; //closest 30p off screen
+												grunt[i]->posY = 400;
+											} else if(spawning > 60 + ((i - 12) * 6) && spawning < 150 + ((i - 12) * 6)) {
+												grunt[i]->posX -= 4;
+												grunt[i]->posY -= 2;
+											} else if(spawning > 60 + ((i - 12) * 6) && spawning < 220 + ((i - 12) * 6)) {
+												if(grunt[i]->posX > ((325 + ((i - 8) * 40)) - 6) && grunt[i]->posX < ((325 + ((i - 8) * 40)) + 6))
+													grunt[i]->posX = 325 + ((i - 8) * 40);
+												else
+													grunt[i]->posX += 4;
+												if(grunt[i]->posY > 112)
+													grunt[i]->posY -= 2;
+												else
+													grunt[i]->posY = 112;
+											}
+										}
+									}
+									if(i < 24 && i > 15) {
+										if(i < 20) {
+											if(spawning == 0) {
+												grunt[i]->posX = 239; //closest 30p off screen
+												grunt[i]->posY = 440;
+											} else if(spawning > 120 + ((i - 16) * 6) && spawning < 210 + ((i - 16) * 6)) {
+												grunt[i]->posX += 4;
+												grunt[i]->posY -= 2;
+											} else if(spawning > 120 + ((i - 16) * 6) && spawning < 280 + ((i - 16) * 6)) {
+												if(grunt[i]->posX > ((325 + ((i - 16) * 40)) - 6) && grunt[i]->posX < ((325 + ((i - 16) * 40)) + 6))
+													grunt[i]->posX = 325 + ((i - 16) * 40);
+												else
+													grunt[i]->posX -= 4;
+												if(grunt[i]->posY > 154)
+													grunt[i]->posY -= 2;
+												else
+													grunt[i]->posY = 154;
+											}
+										} else {
+											if(spawning == 0) {
+												grunt[i]->posX = 700; //closest 30p off screen
+												grunt[i]->posY = 440;
+											} else if(spawning > 120 + ((i - 20) * 6) && spawning < 210 + ((i - 20) * 6)) {
+												grunt[i]->posX -= 4;
+												grunt[i]->posY -= 2;
+											} else if(spawning > 120 + ((i - 20) * 6) && spawning < 280 + ((i - 20) * 6)) {
+												if(grunt[i]->posX > ((325 + ((i - 16) * 40)) - 6) && grunt[i]->posX < ((325 + ((i - 16) * 40)) + 6))
+													grunt[i]->posX = 325 + ((i - 16) * 40);
+												else
+													grunt[i]->posX += 4;
+												if(grunt[i]->posY > 154)
+													grunt[i]->posY -= 2;
+												else
+													grunt[i]->posY = 154;
+											}
+										}
+									}	//return coordinates 325 + ((i * 40) - (320 * (i / 8))), 70 + (42 * (i / 8))
 								} else {
 									if(!(step % 3))
 										grunt[i]->posX += 1 * dir;
@@ -579,7 +676,15 @@ class NewGame:public Game {
 						for(int i = 0; i < 10; i++)
 							if(charge >= i + 1)
 								energy[i]->render(this, 181 - (i * 9), 351);
-					}
+					}`
+					for(int i = 0; i < rAmmo; i++)
+						if(rockets[i]->active == true)
+							if(rockets[i]->alive == true)
+								rockets[i]->render(this, rockets[i]->posX, rockets[i]->posY);
+					for(int i = 0; i < pAmmo; i++)
+						if(sPulse[i]->active == true)
+							if(sPulse[i]->alive == true)
+								sPulse[i]->render(this, sPulse[i]->posX, sPulse[i]->posY);
 					for(int i = 0; i < 3; i++)
 						if(ship[i]->alive == true)
 							ship[i]->render(this, ship[i]->posX, ship[i]->posY);
@@ -595,6 +700,8 @@ class NewGame:public Game {
 					spawning++;
 					respawn++;
 					phase++;
+					if(!(step % 3))
+						offset += 1 * dir;
 					screenScroll++;
 					if(screenScroll >= 540) //reset screen
 						screenScroll = 0;
@@ -666,6 +773,26 @@ class NewGame:public Game {
 									if(gPulse[j]->active == true)
 										collision(gPulse[j], beam);
 						}
+					
+					//wave reset
+					if(!(step % 60)) {
+						reset = true;
+						for(int i = 0; i < troops; i++)
+							if(grunt[i]->alive == true)
+								reset = false;
+						if(reset == true) {
+							wave++;
+							if(wave > 10)
+								room = "over";
+							else {
+								for(int i = 0; i < troops; i++)
+									grunt[i]->alive = true;
+								spawning = 0;
+								hero = 24;
+							}
+						}
+					}
+						
 				} else if(room == "pause") {
 					screen->render(this, 300, -540 + screenScroll);
 					pauseButton->render(this, 423, 112);
