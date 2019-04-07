@@ -440,7 +440,7 @@ class NewGame:public Game {
 					}
 					// Button Mouse Event
 					if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN)
-						if (mouseCollision(playButton, event))
+						if (mouseCollision(playButton, event) && room == "title")
 							if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT)
 								room = "level";
 				const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
