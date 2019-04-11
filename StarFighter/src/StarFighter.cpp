@@ -61,8 +61,8 @@ class Game {
 
 class Image { // images are used for any static image (doesn't need to check for collision -chad)
 	SDL_Texture *texture;
-	int xPos;	// Added these X and Y positions for the checking collision with the mouse -Joey
-	int yPos;
+	int XPos;
+	int YPos;
 	protected:
 		SDL_Rect src;
 	public:
@@ -84,18 +84,16 @@ class Image { // images are used for any static image (doesn't need to check for
 			SDL_QueryTexture(texture, NULL, NULL, &(src.w), &(src.h));
 			src.x = 0;
 			src.y = 0;
-			xPos = 0;
-			yPos = 0;
 			SDL_FreeSurface(surface);
 		}
 		SDL_Rect getSize() {
 			return src;
 		}
 		int getX() {
-			return xPos;
+			return XPos;
 		}
 		int getY() {
-			return yPos;
+			return YPos;
 		}
 		void render(Game *game, int x = 0, int y = 0) {
 			SDL_Rect dest;
@@ -103,8 +101,8 @@ class Image { // images are used for any static image (doesn't need to check for
 			dest.h = src.h;
 			dest.x = x;
 			dest.y = y;
-			xPos = x;
-			yPos = y;
+			XPos = x;
+			YPos = y;
 			SDL_Renderer *renderer= game->getRenderer();
 			SDL_RenderCopy(renderer, texture, &src, &dest);
 		}
@@ -343,6 +341,7 @@ class NewGame:public Game {
 			bool running = true;
 			bool paused = false;
 			bool reset = false;
+			bool godmode = false;
 			string room = "title";
 			string ph = "level";
 			int step = 0;			//ticks
@@ -350,13 +349,13 @@ class NewGame:public Game {
 			int dir = 1;			//direction
 			int offset = 0;
 			int score = 0;
+			int dig = 0;			//digit
 			int respawn = 30;
 			int charge = 10;
 			int phase = 0;
 			int spawning = 0;
-			int dig = 0;			//digit
-			int hero = 24;			//active enemy ship
 			int wave = 1;
+			int hero = 24;			//active enemy ship
 			int gameOver = 0;
 			
 			//initialize weapon testing
@@ -370,23 +369,55 @@ class NewGame:public Game {
 			temp->posX = ship[0]->posX;
 			temp->posY = ship[0]->posY;	
 			ship[0]->posY = player->posY;
+			
 			while(running) {
 				if(SDL_PollEvent(&event))
 					if(event.type == SDL_QUIT)
 						running = false;
 					if(event.type == SDL_KEYDOWN) {
 						if(room == "title") //title screen
-							if(event.key.keysym.sym == SDLK_RETURN) 
-								room = "level";
+							if(event.key.keysym.sym == SDLK_LSHIFT || event.key.keysym.sym == SDLK_RSHIFT) {
+								room = "test";
+								spawning = 0;
+								player->posX = 465;
+								for(int i = 0; i < 10; i++) {
+									rockets[i]->alive = false;
+									sPulse[i]->alive = false;
+								}
+								for (int i = 0; i < troops; i++) {
+									grunt[i]->alive = true;
+									gPulse[i]->alive = false;
+								}
+								for(int i = 0; i < 3; i++) {
+									ship[i]->alive = true;
+									if(ship[i]->active == true) {
+										ship[i]->active = false;
+										ship[i]->posX = temp->posX;
+										ship[i]->posY = temp->posY;
+									}
+								}
+								ship[0]->active = true;
+								player->weapon = ship[0]->weapon;
+								temp->posX = ship[0]->posX;
+								temp->posY = ship[0]->posY;
+								ship[0]->posX = player->posX;
+								ship[0]->posY = player->posY;
+								hero = 24;
+								step = 0;
+								charge = 10;
+								phase = 0;
+								score = 0;
+							}
 						if(room == "over") //replay
 							if(event.key.keysym.sym == SDLK_RETURN) {
-								
-								running = false;
+								room = "title";
+								gameOver = 0;
+								wave = 1;
 							}
-						if(event.key.keysym.sym == SDLK_ESCAPE) //quits
-							running = false;
-						if(room != "title")
-							if(event.key.keysym.sym == SDLK_TAB && room != "title")	//pauses
+						if(event.key.keysym.sym == SDLK_TAB)
+							if(room == "test")
+								room = "title"; //pauses
+							else if(room != "title")
 								if(room != "over") {
 									if(paused == false) {
 										ph = room;
@@ -397,6 +428,8 @@ class NewGame:public Game {
 										room = ph;
 									}
 								}
+						if(event.key.keysym.sym == SDLK_ESCAPE) //quits
+							running = false;
 						if(room == "level") {
 							if(player->weapon == 0)
 								if(event.key.keysym.sym == SDLK_SPACE) {
@@ -432,19 +465,95 @@ class NewGame:public Game {
 							swap(event, SDLK_q, 0, ship, player, temp);
 							swap(event, SDLK_w, 1, ship, player, temp);
 							swap(event, SDLK_e, 2, ship, player, temp);
-							if(event.key.keysym.sym == SDLK_k)//kill
+							if(event.key.keysym.sym == SDLK_k)//kill command
 								for(int i = 0; i < 3; i++)
 									if(ship[i]->active == true)
 										ship[i]->alive = false;
+							if(event.key.keysym.sym == SDLK_g) { //godmode cheat
+								if(godmode == false)
+									godmode = true;
+								else
+									godmode = false;
+							}
+						}
+						else if(room == "test") {
+							rAmmo = 10; //FULL AMMO
+							pAmmo = 10; //
+							if(player->weapon == 0)
+								if(event.key.keysym.sym == SDLK_SPACE) {
+									bool fired = false;
+									for (int i = rAmmo - 1; i > -1; i--)
+										if(rockets[i]->alive == true && rockets[i]->active == false)
+											if(fired == false) {
+												rockets[i]->posX = player->posX + 15;
+												rockets[i]->posY = player->posY + 3;
+												rockets[i]->active = true;
+												fired = true;
+											}
+								}
+							if(player->weapon == 1)
+								if(event.key.keysym.sym == SDLK_SPACE) {
+									bool fired = false;
+									for (int i = pAmmo - 1; i > -1; i--)
+										if(sPulse[i]->alive == true && sPulse[i]->active == false)
+											if(fired == false) {
+												sPulse[i]->posX = player->posX + 15;
+												sPulse[i]->posY = player->posY + 3;
+												sPulse[i]->active = true;
+												fired = true;
+											}
+								}
+							if(player->weapon == 2)
+								if(event.key.keysym.sym == SDLK_SPACE && charge > 9) {
+									beam->posY = player->posY - 540;
+									beam->active = true;
+									charge = 0;
+									phase = 0;
+								}
+							swap(event, SDLK_q, 0, ship, player, temp);
+							swap(event, SDLK_w, 1, ship, player, temp);
+							swap(event, SDLK_e, 2, ship, player, temp);
 						}
 					}
-					// Button Mouse Event
-					if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN)
-						if (mouseCollision(playButton, event) && room == "title")
-							if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT)
+				// Button Mouse Event
+				if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN)
+					if (mouseCollision(playButton, event) && room == "title")
+						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
 								room = "level";
+								spawning = 0;
+								player->posX = 465;
+								for(int i = 0; i < 10; i++) {
+									rockets[i]->alive = false;
+									sPulse[i]->alive = false;
+								}
+								for (int i = 0; i < troops; i++) {
+									grunt[i]->alive = true;
+									gPulse[i]->alive = false;
+								}
+								for(int i = 0; i < 3; i++) {
+									ship[i]->alive = true;
+									if(ship[i]->active == true) {
+										ship[i]->active = false;
+										ship[i]->posX = temp->posX;
+										ship[i]->posY = temp->posY;
+									}
+								}
+								ship[0]->active = true;
+								player->weapon = ship[0]->weapon;
+								temp->posX = ship[0]->posX;
+								temp->posY = ship[0]->posY;
+								ship[0]->posX = player->posX;
+								ship[0]->posY = player->posY;
+								hero = 24;
+								step = 0;
+								charge = 10;
+								phase = 0;
+								score = 0;
+								rAmmo = 3;
+								pAmmo = 2;
+							}
 				const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
-				if(room == "level") {
+				if(room == "level" || room == "test") {
 					if(currentKeyStates[SDL_SCANCODE_RIGHT])
 						if(player->posX < 619)
 							player->posX += 5;
@@ -568,10 +677,10 @@ class NewGame:public Game {
 											if(spawning == 0) {
 												grunt[i]->posX = 700; //closest 40p off screen
 												grunt[i]->posY = 360;
-											} else if(spawning > 0 + ((i - 4) * 6) && spawning < 90 + ((i - 4) * 6)) {
+											} else if(spawning > 0 + ((7 - i) * 6) && spawning < 90 + ((7 - i) * 6)) {
 												grunt[i]->posX -= 4;
 												grunt[i]->posY -= 2;
-											} else if(spawning > 0 + ((i - 4) * 6) && spawning < 160 + ((i - 4) * 6)) {
+											} else if(spawning > 0 + ((7 - i) * 6) && spawning < 160 + ((7 - i) * 6)) {
 												if(grunt[i]->posX > ((325 + (i * 40)) - 6) && grunt[i]->posX < ((325 + (i * 40)) + 6))
 													grunt[i]->posX = 325 + (i * 40);
 												else
@@ -605,10 +714,10 @@ class NewGame:public Game {
 											if(spawning == 0) {
 												grunt[i]->posX = 700; //closest 30p off screen
 												grunt[i]->posY = 400;
-											} else if(spawning > 60 + ((i - 12) * 6) && spawning < 150 + ((i - 12) * 6)) {
+											} else if(spawning > 60 + ((15 - i) * 6) && spawning < 150 + ((15 - i) * 6)) {
 												grunt[i]->posX -= 4;
 												grunt[i]->posY -= 2;
-											} else if(spawning > 60 + ((i - 12) * 6) && spawning < 220 + ((i - 12) * 6)) {
+											} else if(spawning > 60 + ((15 - i) * 6) && spawning < 220 + ((15 - i) * 6)) {
 												if(grunt[i]->posX > ((325 + ((i - 8) * 40)) - 6) && grunt[i]->posX < ((325 + ((i - 8) * 40)) + 6))
 													grunt[i]->posX = 325 + ((i - 8) * 40);
 												else
@@ -642,10 +751,10 @@ class NewGame:public Game {
 											if(spawning == 0) {
 												grunt[i]->posX = 700; //closest 30p off screen
 												grunt[i]->posY = 440;
-											} else if(spawning > 120 + ((i - 20) * 6) && spawning < 210 + ((i - 20) * 6)) {
+											} else if(spawning > 120 + ((23 - i) * 6) && spawning < 210 + ((23 - i) * 6)) {
 												grunt[i]->posX -= 4;
 												grunt[i]->posY -= 2;
-											} else if(spawning > 120 + ((i - 20) * 6) && spawning < 280 + ((i - 20) * 6)) {
+											} else if(spawning > 120 + ((23 - i) * 6) && spawning < 280 + ((23 - i) * 6)) {
 												if(grunt[i]->posX > ((325 + ((i - 16) * 40)) - 6) && grunt[i]->posX < ((325 + ((i - 16) * 40)) + 6))
 													grunt[i]->posX = 325 + ((i - 16) * 40);
 												else
@@ -742,14 +851,259 @@ class NewGame:public Game {
 					//collision	
 						//check player
 					if(respawn > 30)
+						if(godmode == false)
+							for (int i = 0; i < 3; i++)
+								if(ship[i]->active == true) {
+									for (int j = 0; j < troops; j++)
+										if(grunt[j]->alive == true)
+											collision(grunt[j], ship[i]);
+									for (int j = 0; j < troops; j++)
+										if(gPulse[j]->alive == true)
+											collision(gPulse[j], ship[i]);
+									if(ship[i]->alive == false)
+										if(gameOver > 1){
+											player->alive = false;
+											room = "over";
+										}
+									else
+										for(int k = 0; k < 3; k++)
+											if(ship[k]->alive == true) {
+													respawn = 0;
+													ship[i]->active = false;
+													player->weapon = ship[k]->weapon;
+													ship[i]->posX = temp->posX;
+													ship[i]->posY = temp->posY;
+													ship[k]->active = true;
+													temp->posX = ship[k]->posX;
+													temp->posY = ship[k]->posY;
+													ship[k]->posY = player->posY;
+													gameOver++;
+													break;
+											}
+								}
+						//check projectile
+					for (int i = 0; i < rAmmo; i++)
+						if(rockets[i]->alive == true)
+							if(rockets[i]->active == true) {
+								for (int j = 0; j < troops; j++)
+									if(grunt[j]->alive == true)
+										score += collision(rockets[i], grunt[j]);
+								for (int j = 0; j < troops; j++)
+									if(gPulse[j]->alive == true)
+										if(gPulse[j]->active == true)
+											collision(gPulse[j], rockets[i]);
+							}
+					for (int i = 0; i < pAmmo; i++)
+						if(sPulse[i]->alive == true)
+							if(sPulse[i]->active == true) {
+								for (int j = 0; j < troops; j++)
+									if(grunt[j]->alive == true)
+										score += collision(sPulse[i], grunt[j]);
+								for (int j = 0; j < troops; j++)
+									if(gPulse[j]->alive == true)
+										if(gPulse[j]->active == true)
+											collision(gPulse[j], sPulse[i]);
+							}
+					if(beam->active == true)
+						if(beam->active == true) {
+							for (int j = 0; j < troops; j++) {
+								beam->alive = true;
+								if(grunt[j]->alive == true)
+									score += collision(grunt[j], beam);
+							}
+							for (int j = 0; j < troops; j++)
+								if(gPulse[j]->alive == true)
+									if(gPulse[j]->active == true)
+										collision(gPulse[j], beam);
+						}
+					
+					//wave reset
+					if(!(step % 60)) {
+						reset = true;
+						for(int i = 0; i < troops; i++)
+							if(grunt[i]->alive == true)
+								reset = false;
+						if(reset == true) {
+							wave++;
+							if(wave > 10)
+								room = "over";
+							else {
+								for(int i = 0; i < troops; i++)
+									grunt[i]->alive = true;
+								spawning = 0;
+								hero = 24;
+							}
+						}
+					}
+				} else if(room == "test") {
+					if(spawning == 0) {
+						for(int i = 0; i < troops; i++) {
+							grunt[i]->posX = 325 + ((i * 40) - (320 * (i / 8)));
+							grunt[i]->posY = 70 + (42 * (i / 8));
+						}
+					}
+					if(!(step % 146)) { //active enemy event
+						if(hero < 24) {
+							if(hero == 0) //return
+								grunt[hero]->posX = grunt[1]->posX - 40;
+							else
+								grunt[hero]->posX = grunt[0]->posX + ((hero * 40) - (320 * (hero / 8)));
+							grunt[hero]->posY = 70 + (42 * (hero / 8));
+						}
+						for(int i = 0; i < 30; i++) {
+							hero = rand() % 24; //new active enemy
+							if(grunt[hero]->alive == true)
+								break;
+						}
+					}
+					if(!(step % 1)) { //rocket respawn //changed 50 to 1
+						for(int i = 0; i < rAmmo; i++) {
+							if(rockets[i]->alive == false){
+								rockets[i]->alive = true;
+								rockets[i]->active = false;
+								rockets[i]->posX = 181 - (i * 9);
+								rockets[i]->posY = 351;
+								break;
+							}
+						}
+						for(int i = 0; i < pAmmo; i++) {
+							if(sPulse[i]->alive == false){
+								sPulse[i]->alive = true;
+								sPulse[i]->active = false;
+								sPulse[i]->posX = 181 - (i * 9);
+								sPulse[i]->posY = 351;
+								break;
+							}
+						}
+					}
+					if(!(step % 35))
+						if(charge < 10)
+							charge += 50;
+					if(phase > 5)
+						beam->active = false;
+					if(hero < 24)
+						if(grunt[hero]->alive == true) { //active enemy path
+							grunt[hero]->posY += 4;
+							if(grunt[hero]->posY > 540)
+								grunt[hero]->posY = -42;
+							if(grunt[hero]->posY > 200 && grunt[hero]->posY < 390) {
+								if(grunt[hero]->posX < player->posX && grunt[hero]->posX < (player->posX + 10))
+									grunt[hero]->posX += 4;
+								else if(grunt[hero]->posX > player->posX && grunt[hero]->posX > (player->posX + 10) )
+									grunt[hero]->posX -= 4;
+								if(grunt[hero]->posX >= player->posX && grunt[hero]->posX <= (player->posX + 10))
+									if(gPulse[hero]->active == false) {
+										gPulse[hero]->posX = grunt[hero]->posX + 10;
+										gPulse[hero]->posY = grunt[hero]->posY + 10;
+										gPulse[hero]->active = true;
+									}
+							}
+							if(grunt[hero]->posY < (70 + (42 * (hero / 8))) || grunt[hero]->posY > 480) {
+								if(hero == 0) {
+									if(grunt[hero]->posX < (grunt[1]->posX - 40) && grunt[hero]->posX < (grunt[1]->posX - 40))
+										grunt[hero]->posX += 4;
+									else if(grunt[hero]->posX > (grunt[1]->posX - 40) && grunt[hero]->posX > (grunt[1]->posX - 30))
+										grunt[hero]->posX -= 4;
+									if(grunt[hero]->posX > (grunt[1]->posX - 40) && grunt[hero]->posX < (grunt[1]->posX - 40))
+										grunt[hero]->posX = grunt[1]->posX - 40;
+								} else {
+									if(grunt[hero]->posX < (grunt[0]->posX + ((hero * 40) - (320 * (hero / 8)))) && grunt[hero]->posX < (grunt[0]->posX + ((hero * 40) - (320 * (hero / 8)))) + 10)
+										grunt[hero]->posX += 4;
+									else if(grunt[hero]->posX > (grunt[0]->posX + ((hero * 40) - (320 * (hero / 8)))) && grunt[hero]->posX > (grunt[0]->posX + ((hero * 40) - (320 * (hero / 8)))) + 10)
+										grunt[hero]->posX -= 4;
+									if(grunt[hero]->posX > (grunt[0]->posX + ((hero * 40) - (320 * (hero / 8)))) && grunt[hero]->posX < (grunt[0]->posX + ((hero * 40) - (320 * (hero / 8)))) + 10)
+										grunt[hero]->posX = grunt[0]->posX + ((hero * 40) - (320 * (hero / 8)));
+								}
+							}
+						} //end of path
+						if(gPulse[hero]->alive == true)
+							if(gPulse[hero]->active == false) {
+								gPulse[hero]->posX = 10;
+								gPulse[hero]->posY = 10;
+							} else
+								gPulse[hero]->posY += 6;
+						if(gPulse[hero]->posY > 540)
+							gPulse[hero]->active = false;
+						if(gPulse[hero]->alive == false) {
+							gPulse[hero]->posX = 10;
+							gPulse[hero]->posY = 10;
+							gPulse[hero]->alive = true;
+						}
+					for (int i = 0; i < rAmmo; i++) {
+						if(rockets[i]->active == true)
+							rockets[i]->posY -= 6;
+						if(rockets[i]->posY < -10)
+							rockets[i]->alive = false;
+					}
+					for (int i = 0; i < pAmmo; i++) {
+						if(sPulse[i]->active == true)
+							sPulse[i]->posY -= 10;
+						if(sPulse[i]->posY < -10)
+							sPulse[i]->alive = false;
+					}
+					if(beam->active == true)
+						beam->posX = player->posX + 12;
+					else
+						beam->posX = -10;
+					for(int i = 0; i < 3; i++)
+						if(ship[i]->active == true)
+							ship[i]->posX = player->posX;
+					
+					//render
+					screen->render(this, 300, -540 + screenScroll);
+					if(gPulse[hero]->alive == true)
+						if(gPulse[hero]->active == true)
+							gPulse[hero]->render(this, gPulse[hero]->posX, gPulse[hero]->posY);
+					for (int i = 0; i < troops; i++)
+						if(grunt[i]->alive == true)
+							grunt[i]->render(this, grunt[i]->posX, grunt[i]->posY);
+					edgeR->render(this);
+					edgeL->render(this, 660);
+					if(player->weapon == 0)
+						for(int i = 0; i < rAmmo; i++)
+							if(rockets[i]->alive == true)
+								rockets[i]->render(this, rockets[i]->posX, rockets[i]->posY);
+					if(player->weapon == 1)
+						for(int i = 0; i < pAmmo; i++)
+							if(sPulse[i]->alive == true)
+								sPulse[i]->render(this, sPulse[i]->posX, sPulse[i]->posY);
+					if(player->weapon == 2) {
+						if(beam->active == true)
+							beam->render(this, beam->posX, beam->posY);
+						for(int i = 0; i < 10; i++)
+							energy2[i]->render(this, 181 - (i * 9), 351);
+						for(int i = 0; i < 10; i++)
+							if(charge >= i + 1)
+								energy[i]->render(this, 181 - (i * 9), 351);
+					}
+					for(int i = 0; i < 3; i++)
+						if(ship[i]->alive == true)
+							ship[i]->render(this, ship[i]->posX, ship[i]->posY);
+					int board = score;
+					for(int i = 0; i < 6; i++) {
+						dig = 5 - i;
+						scoreboard[(board % 10) + (dig * 10)]->render(this, 760 + (18 * dig), 106);		
+						board /= 10;
+					}
+							
+					//increment
+					step++;
+					spawning++;
+					respawn++;
+					phase++;
+					screenScroll++;
+					if(screenScroll >= 540) //reset screen
+						screenScroll = 0;
+						
+					//collision	
+						//check player
+					if(respawn > 30)
 						for (int i = 0; i < 3; i++)
 							if(ship[i]->active == true) {
 								for (int j = 0; j < troops; j++)
 									if(grunt[j]->alive == true)
-										collision(grunt[j], ship[i]);
 								for (int j = 0; j < troops; j++)
 									if(gPulse[j]->alive == true)
-										collision(gPulse[j], ship[i]);
 								if(ship[i]->alive == false)
 									if(gameOver > 1){
 										player->alive = false;
@@ -805,27 +1159,21 @@ class NewGame:public Game {
 								if(gPulse[j]->alive == true)
 									if(gPulse[j]->active == true)
 										collision(gPulse[j], beam);
+				
 						}
-					
 					//wave reset
-					if(!(step % 60)) {
+					/*if(!(step % 60)) {
 						reset = true;
 						for(int i = 0; i < troops; i++)
 							if(grunt[i]->alive == true)
 								reset = false;
 						if(reset == true) {
-							wave++;
-							if(wave > 10)
-								room = "over";
-							else {
-								for(int i = 0; i < troops; i++)
-									grunt[i]->alive = true;
-								spawning = 0;
-								hero = 24;
-							}
+							for(int i = 0; i < troops; i++)
+								grunt[i]->alive = true;
+							spawning = 0;
+							hero = 24;
 						}
-					}
-						
+					}*/
 				} else if(room == "pause") {
 					screen->render(this, 300, -540 + screenScroll);
 					pauseButton->render(this, 423, 112);
