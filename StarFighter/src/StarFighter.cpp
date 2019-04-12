@@ -262,8 +262,14 @@ class NewGame:public Game {
 	string file = "../include/";
 	Image *background;
 	Image *title;
+	Image *optionsMenu;
+	Image *controlsMenu;
 	Image *playButton;
+	Image *trainingButton;
+	Image *optionsButton;
+	Image *controlsButton;
 	Image *pauseButton;
+	Image *xButton;
 	Image *gameoverButton;
 	Image *edgeR;
 	Image *edgeL;
@@ -289,8 +295,14 @@ class NewGame:public Game {
 		void init() {
 			background = new Image(this, file + "bgd.bmp");
 			title = new Image(this, file + "title.bmp");
+			optionsMenu = new Image(this, file + "optionsMenu.bmp");
+			controlsMenu = new Image(this, file + "controlsMenu.bmp");
 			playButton = new Image(this, file + "playButton.bmp");
+			trainingButton = new Image(this, file + "trainingButton.bmp");
+			optionsButton = new Image(this, file + "optionsButton.bmp");
+			controlsButton = new Image(this, file + "controlsButton.bmp");
 			pauseButton = new Image(this, file + "pauseButton.bmp");
+			xButton = new Image(this, file + "xButton.bmp");
 			gameoverButton = new Image(this, file + "gameoverButton.bmp");
 			edgeR = new Image(this, file + "frameR.bmp");
 			edgeL = new Image(this, file + "frameL.bmp");
@@ -375,49 +387,8 @@ class NewGame:public Game {
 					if(event.type == SDL_QUIT)
 						running = false;
 					if(event.type == SDL_KEYDOWN) {
-						if(room == "title") //title screen
-							if(event.key.keysym.sym == SDLK_LSHIFT || event.key.keysym.sym == SDLK_RSHIFT) {
-								room = "test";
-								spawning = 0;
-								player->posX = 465;
-								for(int i = 0; i < 10; i++) {
-									rockets[i]->alive = false;
-									sPulse[i]->alive = false;
-								}
-								for (int i = 0; i < troops; i++) {
-									grunt[i]->alive = true;
-									gPulse[i]->alive = false;
-								}
-								for(int i = 0; i < 3; i++) {
-									ship[i]->alive = true;
-									if(ship[i]->active == true) {
-										ship[i]->active = false;
-										ship[i]->posX = temp->posX;
-										ship[i]->posY = temp->posY;
-									}
-								}
-								ship[0]->active = true;
-								player->weapon = ship[0]->weapon;
-								temp->posX = ship[0]->posX;
-								temp->posY = ship[0]->posY;
-								ship[0]->posX = player->posX;
-								ship[0]->posY = player->posY;
-								hero = 24;
-								step = 0;
-								charge = 10;
-								phase = 0;
-								score = 0;
-							}
-						if(room == "over") //replay
-							if(event.key.keysym.sym == SDLK_RETURN) {
-								room = "title";
-								gameOver = 0;
-								wave = 1;
-							}
 						if(event.key.keysym.sym == SDLK_TAB)
-							if(room == "test")
-								room = "title"; //pauses
-							else if(room != "title")
+							if(room != "title")
 								if(room != "over") {
 									if(paused == false) {
 										ph = room;
@@ -516,7 +487,7 @@ class NewGame:public Game {
 						}
 					}
 				// Button Mouse Event
-				if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN)
+				if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN) {
 					if (mouseCollision(playButton, event) && room == "title")
 						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
 								room = "level";
@@ -551,7 +522,53 @@ class NewGame:public Game {
 								score = 0;
 								rAmmo = 3;
 								pAmmo = 2;
+						}
+					if (mouseCollision(trainingButton, event) && room == "title")
+						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+							room = "test";
+							spawning = 0;
+							player->posX = 465;
+							for(int i = 0; i < 10; i++) {
+								rockets[i]->alive = false;
+								sPulse[i]->alive = false;
 							}
+							for (int i = 0; i < troops; i++) {
+								grunt[i]->alive = true;
+								gPulse[i]->alive = false;
+							}
+							for(int i = 0; i < 3; i++) {
+								ship[i]->alive = true;
+								if(ship[i]->active == true) {
+									ship[i]->active = false;
+									ship[i]->posX = temp->posX;
+									ship[i]->posY = temp->posY;
+								}
+							}
+							ship[0]->active = true;
+							player->weapon = ship[0]->weapon;
+							temp->posX = ship[0]->posX;
+							temp->posY = ship[0]->posY;
+							ship[0]->posX = player->posX;
+							ship[0]->posY = player->posY;
+							hero = 24;
+							step = 0;
+							charge = 10;
+							phase = 0;
+							score = 0;
+						}
+					if (mouseCollision(optionsButton, event) && room == "title")
+						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT)
+							room = "option";
+					if (mouseCollision(controlsButton, event) && room == "title")
+						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT)
+							room = "control";
+					if (mouseCollision(xButton, event) && room != "title")
+						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+							room = "title";
+							gameOver = 0;
+							wave = 1;
+						}
+				}
 				const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
 				if(room == "level" || room == "test") {
 					if(currentKeyStates[SDL_SCANCODE_RIGHT])
@@ -561,11 +578,21 @@ class NewGame:public Game {
 						if(player->posX > 310)
 							player->posX -= 5;
 				}
+				
 				SDL_Renderer *renderer = getRenderer();
 				if(room == "title") {
 					background->render(this);
 					title->render(this, 259, 112);
-					playButton->render(this, 399, 300);
+					playButton->render(this, 399, 260);
+					trainingButton->render(this, 399, 320);
+					optionsButton->render(this, 399, 362);
+					controlsButton->render(this, 399, 404);
+				} else if(room == "option") {
+					optionsMenu->render(this);
+					xButton->render(this, 20, 20);
+				} else if(room == "control") {
+					controlsMenu->render(this);
+					xButton->render(this, 20, 20);
 				} else if(room == "level") {
 					if(!(step % 60)) //enemy drift
 						dir *= 1;
@@ -836,7 +863,8 @@ class NewGame:public Game {
 						scoreboard[(board % 10) + (dig * 10)]->render(this, 760 + (18 * dig), 106);		
 						board /= 10;
 					}
-							
+					xButton->render(this, 20, 20);
+					
 					//increment
 					step++;
 					spawning++;
@@ -1085,7 +1113,8 @@ class NewGame:public Game {
 						scoreboard[(board % 10) + (dig * 10)]->render(this, 760 + (18 * dig), 106);		
 						board /= 10;
 					}
-							
+					xButton->render(this, 20, 20);
+					
 					//increment
 					step++;
 					spawning++;
@@ -1203,6 +1232,7 @@ class NewGame:public Game {
 							if(charge >= i + 1)
 								energy[i]->render(this, 181 - (i * 9), 351);
 					}
+					xButton->render(this, 20, 20);
 				} else if(room == "over") {
 					screen->render(this, 300, -540 + screenScroll);
 					gameoverButton->render(this, 348, 143);
@@ -1214,6 +1244,7 @@ class NewGame:public Game {
 						scoreboard[(board % 10) + (dig * 10)]->render(this, 760 + (18 * dig), 106);		
 						board /= 10;
 					}
+					xButton->render(this, 20, 20);
 				}
 				SDL_RenderPresent(renderer);
 				SDL_Delay(16);
