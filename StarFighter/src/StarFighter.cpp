@@ -258,6 +258,371 @@ void swap(SDL_Event event, SDL_Keycode key, int num,vector <Sprite *> ship, Spri
 							}
 };
 
+void enemyMovement1(Sprite *A, int i, int spawning, int dir, int step) {
+	if (spawning < 360) { //spawn path
+		if (i < 8) {
+			if (i < 4) {
+				if (spawning < 0) {
+					A->posX = 239; //closest 40p off screen
+					A->posY = 360;
+				} else if (spawning > 0 + (i * 6) && spawning < 90 + (i * 6)) {
+					A->posX += 4;
+					A->posY -= 2;
+				} else if (spawning > 0 + (i * 6) && spawning < 160 + (i * 6)) {
+					if (A->posX > ((325 + (i * 40)) - 6) && A->posX < ((325 + (i * 40)) + 6))
+						A->posX = 325 + (i * 40);
+					else
+						A->posX -= 4;
+					if (A->posY > 70)
+						A->posY -= 2;
+					else
+						A->posY = 70;
+				}
+			} else {
+				if (spawning < 0) {
+					A->posX = 700; //closest 40p off screen
+					A->posY = 360;
+				} else if (spawning > 0 + ((7 - i) * 6) && spawning < 90 + ((7 - i) * 6)) {
+					A->posX -= 4;
+					A->posY -= 2;
+				} else if (spawning > 0 + ((7 - i) * 6) && spawning < 160 + ((7 - i) * 6)) {
+					if (A->posX > ((325 + (i * 40)) - 6) && A->posX < ((325 + (i * 40)) + 6))
+						A->posX = 325 + (i * 40);
+					else
+						A->posX += 4;
+					if (A->posY > 70)
+						A->posY -= 2;
+					else
+						A->posY = 70;
+				}
+			}
+		}
+		if (i < 16 && i > 7) {
+			if (i < 12) {
+				if (spawning < 0) {
+					A->posX = 239; //closest 30p off screen
+					A->posY = 400;
+				} else if (spawning > 60 + ((i - 8) * 6) && spawning < 150 + ((i - 8) * 6)) {
+					A->posX += 4;
+					A->posY -= 2;
+				} else if (spawning > 60 + ((i - 8) * 6) && spawning < 220 + ((i - 8) * 6)) {
+					if (A->posX > ((325 + ((i - 8) * 40)) - 6) && A->posX < ((325 + ((i - 8) * 40)) + 6))
+						A->posX = 325 + ((i - 8) * 40);
+					else
+						A->posX -= 4;
+					if (A->posY > 112)
+						A->posY -= 2;
+					else
+						A->posY = 112;
+				}
+			} else {
+				if (spawning < 0) {
+					A->posX = 700; //closest 30p off screen
+					A->posY = 400;
+				} else if (spawning > 60 + ((15 - i) * 6) && spawning < 150 + ((15 - i) * 6)) {
+					A->posX -= 4;
+					A->posY -= 2;
+				} else if (spawning > 60 + ((15 - i) * 6) && spawning < 220 + ((15 - i) * 6)) {
+					if (A->posX > ((325 + ((i - 8) * 40)) - 6) && A->posX < ((325 + ((i - 8) * 40)) + 6))
+						A->posX = 325 + ((i - 8) * 40);
+					else
+						A->posX += 4;
+					if (A->posY > 112)
+						A->posY -= 2;
+					else
+						A->posY = 112;
+				}
+			}
+		}
+		if (i < 24 && i > 15) {
+			if (i < 20)	{
+				if (spawning < 0) {
+					A->posX = 239; //closest 30p off screen
+					A->posY = 440;
+				} else if (spawning > 120 + ((i - 16) * 6) && spawning < 210 + ((i - 16) * 6)) {
+					A->posX += 4;
+					A->posY -= 2;
+				} else if (spawning > 120 + ((i - 16) * 6) && spawning < 280 + ((i - 16) * 6)) {
+					if (A->posX > ((325 + ((i - 16) * 40)) - 6) && A->posX < ((325 + ((i - 16) * 40)) + 6))
+						A->posX = 325 + ((i - 16) * 40);
+					else
+						A->posX -= 4;
+					if (A->posY > 154)
+						A->posY -= 2;
+					else
+						A->posY = 154;
+				}
+			} else {
+				if (spawning < 0) {
+					A->posX = 700; //closest 30p off screen
+					A->posY = 440;
+				} else if (spawning > 120 + ((23 - i) * 6) && spawning < 210 + ((23 - i) * 6)) {
+					A->posX -= 4;
+					A->posY -= 2;
+				} else if (spawning > 120 + ((23 - i) * 6) && spawning < 280 + ((23 - i) * 6)) {
+					if (A->posX > ((325 + ((i - 16) * 40)) - 6) && A->posX < ((325 + ((i - 16) * 40)) + 6))
+						A->posX = 325 + ((i - 16) * 40);
+					else
+						A->posX += 4;
+					if (A->posY > 154)
+						A->posY -= 2;
+					else
+						A->posY = 154;
+				}
+			}
+		} //return coordinates 325 + ((i * 40) - (320 * (i / 8))), 70 + (42 * (i / 8))
+	} else {
+		if (!(step % 3))
+			A->posX += 1 * dir;
+	}
+}
+
+void enemyMovement2(Sprite *A, int i, int spawning, int dir, int step) {
+	if (spawning < 360) { //spawn path
+		if (i < 8) {
+			if (i < 4) {
+				if (spawning < 0) {
+					A->posX = 239;
+					A->posY = 360;
+				} else if (spawning > 0 + (i * 6) && spawning < 55 + (i * 6))
+					A->posX += 4;
+				else if (spawning > 0 + (i * 6) && spawning < 105 + (i * 6))
+					A->posY -= 4;
+				else if (spawning > 0 + (i * 6) && spawning < 140 + (i * 6)) {
+					if (A->posX > ((325 + (i * 40)) - 6) && A->posX < ((325 + (i * 40)) + 6))
+						A->posX = 325 + (i * 40);
+					else
+						A->posX -= 4;
+				} else if (spawning > 0 + (i * 6) && spawning < 225 + (i * 6)) {
+					if (A->posY > 70)
+						A->posY -= 4;
+					else
+						A->posY = 70;
+				}
+			} else {
+				if (spawning < 0) {
+					A->posX = 700;
+					A->posY = 360;
+				} else if (spawning > 0 + ((7 - i) * 6) && spawning < 55 + ((7 - i) * 6))
+					A->posX -= 4;
+				else if (spawning > 0 + ((7 - i) * 6) && spawning < 105 + ((7 - i) * 6))
+					A->posY -= 4;
+				else if (spawning > 0 + ((7 - i) * 6) && spawning < 140 + ((7 - i) * 6)) {
+					if (A->posX > ((325 + (i * 40)) - 6) && A->posX < ((325 + (i * 40)) + 6))
+						A->posX = 325 + (i * 40);
+					else
+						A->posX += 4;
+				} else if (spawning > 0 + ((7 - i) * 6) && spawning < 225 + ((7 - i) * 6)) {
+					if (A->posY > 70)
+						A->posY -= 4;
+					else
+						A->posY = 70;
+				}
+			}
+		}
+		if (i < 16 && i > 7) {
+			if (i < 12) {
+				if (spawning < 0) {
+					A->posX = 239;
+					A->posY = 360;
+				} else if (spawning > 60 + ((i - 8) * 6) && spawning < 115 + ((i - 8) * 6))
+					A->posX += 4;
+				else if (spawning > 60 + ((i - 8) * 6) && spawning < 165 + ((i - 8) * 6))
+					A->posY -= 4;
+				else if (spawning > 60 + ((i - 8) * 6) && spawning < 200 + ((i - 8) * 6)) {
+					if (A->posX > ((325 + ((i - 8) * 40)) - 6) && A->posX < ((325 + ((i - 8) * 40)) + 6))
+						A->posX = 325 + ((i - 8) * 40);
+					else
+						A->posX -= 4;
+				} else if (spawning > 60 + ((i - 8) * 6) && spawning < 285 + ((i - 8) * 6)) {
+					if (A->posY > 112)
+						A->posY -= 4;
+					else
+						A->posY = 112;
+				}
+			} else {
+				if (spawning < 0) {
+					A->posX = 700; //closest 30p off screen
+					A->posY = 360;
+				} else if (spawning > 60 + ((15 - i) * 6) && spawning < 115 + ((15 - i) * 6))
+					A->posX -= 4;
+				else if (spawning > 60 + ((15 - i) * 6) && spawning < 165 + ((15 - i) * 6))
+					A->posY -= 4;
+				else if (spawning > 60 + ((15 - i) * 6) && spawning < 200 + ((15 - i) * 6)) {
+					if (A->posX > ((325 + ((i - 8) * 40)) - 6) && A->posX < ((325 + ((i - 8) * 40)) + 6))
+						A->posX = 325 + ((i - 8) * 40);
+					else
+						A->posX += 4;
+				} else if (spawning > 60 + ((15 - i) * 6) && spawning < 285 + ((15 - i) * 6)) {
+					if (A->posY > 112)
+						A->posY -= 4;
+					else
+						A->posY = 112;
+				}
+			}
+		}
+		if (i < 24 && i > 15) {
+			if (i < 20)	{
+				if (spawning < 0) {
+					A->posX = 239;
+					A->posY = 360;
+				} else if (spawning > 120 + ((i - 16) * 6) && spawning < 175 + ((i - 16) * 6))
+					A->posX += 4;
+				else if (spawning > 120 + ((i - 16) * 6) && spawning < 227 + ((i - 16) * 6)){
+					if (A->posY > 154)
+						A->posY -= 4;
+					else
+						A->posY = 154;
+				} else if (spawning > 120 + ((i - 16) * 6) && spawning < 260 + ((i - 16) * 6)) {
+					if (A->posX > ((325 + ((i - 16) * 40)) - 6) && A->posX < ((325 + ((i - 16) * 40)) + 6))
+						A->posX = 325 + ((i - 16) * 40);
+					else
+						A->posX -= 4;
+				}
+			} else {
+				if (spawning < 0) {
+					A->posX = 700;
+					A->posY = 360;
+				} else if (spawning > 120 + ((23 - i) * 6) && spawning < 175 + ((23 - i) * 6))
+					A->posX -= 4;
+				else if (spawning > 120 + ((23 - i) * 6) && spawning < 227 + ((23 - i) * 6)) {
+					if (A->posY > 154)
+						A->posY -= 4;
+					else
+						A->posY = 154;
+				} else if (spawning > 120 + ((23 - i) * 6) && spawning < 260 + ((23 - i) * 6)) {
+					if (A->posX > ((325 + ((i - 16) * 40)) - 6) && A->posX < ((325 + ((i - 16) * 40)) + 6))
+						A->posX = 325 + ((i - 16) * 40);
+					else
+						A->posX += 4;
+				}
+			}
+		} //return coordinates 325 + ((i * 40) - (320 * (i / 8))), 70 + (42 * (i / 8))
+	} else {
+		if (!(step % 3))
+			A->posX += 1 * dir;
+	}
+}
+
+void enemyMovement3(Sprite *A, int i, int spawning, int dir, int step) {
+	if (spawning < 360) { //spawn path
+		if (i < 8) {
+			if (i < 4) {
+				if (spawning < 0) {
+					A->posX = 239; //closest 40p off screen
+					A->posY = 360;
+				} else if (spawning > 0 + (i * 6) && spawning < 90 + (i * 6)) {
+					A->posX += 4;
+					A->posY -= 2;
+				} else if (spawning > 0 + (i * 6) && spawning < 160 + (i * 6)) {
+					if (A->posX > ((325 + (i * 40)) - 6) && A->posX < ((325 + (i * 40)) + 6))
+						A->posX = 325 + (i * 40);
+					else
+						A->posX -= 4;
+					if (A->posY > 70)
+						A->posY -= 2;
+					else
+						A->posY = 70;
+				}
+			} else {
+				if (spawning < 0) {
+					A->posX = 700; //closest 40p off screen
+					A->posY = 360;
+				} else if (spawning > 0 + ((7 - i) * 6) && spawning < 90 + ((7 - i) * 6)) {
+					A->posX -= 4;
+					A->posY -= 2;
+				} else if (spawning > 0 + ((7 - i) * 6) && spawning < 160 + ((7 - i) * 6)) {
+					if (A->posX > ((325 + (i * 40)) - 6) && A->posX < ((325 + (i * 40)) + 6))
+						A->posX = 325 + (i * 40);
+					else
+						A->posX += 4;
+					if (A->posY > 70)
+						A->posY -= 2;
+					else
+						A->posY = 70;
+				}
+			}
+		}
+		if (i < 16 && i > 7) {
+			if (i < 12) {
+				if (spawning < 0) {
+					A->posX = 239; //closest 30p off screen
+					A->posY = 400;
+				} else if (spawning > 60 + ((i - 8) * 6) && spawning < 150 + ((i - 8) * 6)) {
+					A->posX += 4;
+					A->posY -= 2;
+				} else if (spawning > 60 + ((i - 8) * 6) && spawning < 220 + ((i - 8) * 6)) {
+					if (A->posX > ((325 + ((i - 8) * 40)) - 6) && A->posX < ((325 + ((i - 8) * 40)) + 6))
+						A->posX = 325 + ((i - 8) * 40);
+					else
+						A->posX -= 4;
+					if (A->posY > 112)
+						A->posY -= 2;
+					else
+						A->posY = 112;
+				}
+			} else {
+				if (spawning < 0) {
+					A->posX = 700; //closest 30p off screen
+					A->posY = 400;
+				} else if (spawning > 60 + ((15 - i) * 6) && spawning < 150 + ((15 - i) * 6)) {
+					A->posX -= 4;
+					A->posY -= 2;
+				} else if (spawning > 60 + ((15 - i) * 6) && spawning < 220 + ((15 - i) * 6)) {
+					if (A->posX > ((325 + ((i - 8) * 40)) - 6) && A->posX < ((325 + ((i - 8) * 40)) + 6))
+						A->posX = 325 + ((i - 8) * 40);
+					else
+						A->posX += 4;
+					if (A->posY > 112)
+						A->posY -= 2;
+					else
+						A->posY = 112;
+				}
+			}
+		}
+		if (i < 24 && i > 15) {
+			if (i < 20)	{
+				if (spawning < 0) {
+					A->posX = 239; //closest 30p off screen
+					A->posY = 440;
+				} else if (spawning > 120 + ((i - 16) * 6) && spawning < 210 + ((i - 16) * 6)) {
+					A->posX += 4;
+					A->posY -= 2;
+				} else if (spawning > 120 + ((i - 16) * 6) && spawning < 280 + ((i - 16) * 6)) {
+					if (A->posX > ((325 + ((i - 16) * 40)) - 6) && A->posX < ((325 + ((i - 16) * 40)) + 6))
+						A->posX = 325 + ((i - 16) * 40);
+					else
+						A->posX -= 4;
+					if (A->posY > 154)
+						A->posY -= 2;
+					else
+						A->posY = 154;
+				}
+			} else {
+				if (spawning < 0) {
+					A->posX = 700; //closest 30p off screen
+					A->posY = 440;
+				} else if (spawning > 120 + ((23 - i) * 6) && spawning < 210 + ((23 - i) * 6)) {
+					A->posX -= 4;
+					A->posY -= 2;
+				} else if (spawning > 120 + ((23 - i) * 6) && spawning < 280 + ((23 - i) * 6)) {
+					if (A->posX > ((325 + ((i - 16) * 40)) - 6) && A->posX < ((325 + ((i - 16) * 40)) + 6))
+						A->posX = 325 + ((i - 16) * 40);
+					else
+						A->posX += 4;
+					if (A->posY > 154)
+						A->posY -= 2;
+					else
+						A->posY = 154;
+				}
+			}
+		} //return coordinates 325 + ((i * 40) - (320 * (i / 8))), 70 + (42 * (i / 8))
+	} else {
+		if (!(step % 3))
+			A->posX += 1 * dir;
+	}
+}
+
 class NewGame:public Game {
 	string file = "../include/";
 	Image *background;
@@ -275,6 +640,7 @@ class NewGame:public Game {
 	Image *edgeL;
 	Image *screen;
 	vector<Image *> scoreboard;
+	vector<Image *> waveCount;
 	vector<Image *> energy;
 	vector<Image *> energy2;
 	int digits = 60;
@@ -309,8 +675,16 @@ class NewGame:public Game {
 			screen = new Image(this, file + "screen.bmp");
 			int count = 0;
 			for (int i = 0; i < digits; i++) {
-				Image *digit = new Image(this, file + to_string(count) + ".bmp");
+				Image *digit = new Image(this, file + "score/" + to_string(count) + ".bmp");
 				scoreboard.push_back(digit);
+				count++;
+				if(count > 9)
+					count = 0;
+			}
+			count = 0;
+			for (int i = 0; i < 20; i++) {
+				Image *waveDigit = new Image(this, file + "text/" + to_string(count) + ".bmp");
+				waveCount.push_back(waveDigit);
 				count++;
 				if(count > 9)
 					count = 0;
@@ -356,12 +730,13 @@ class NewGame:public Game {
 			bool godmode = false;
 			string room = "title";
 			string ph = "level";
-			int step = 0;			//ticks
+			int step = -30;			//ticks
 			int screenScroll = 0;
 			int dir = 1;			//direction
 			int offset = 0;
 			int score = 0;
 			int dig = 0;			//digit
+			int board = 0;
 			int respawn = 30;
 			int charge = 10;
 			int phase = 0;
@@ -491,7 +866,7 @@ class NewGame:public Game {
 					if (mouseCollision(playButton, event) && room == "title")
 						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
 								room = "level";
-								spawning = 0;
+								spawning = -30;
 								player->posX = 465;
 								for(int i = 0; i < 10; i++) {
 									rockets[i]->alive = false;
@@ -516,7 +891,7 @@ class NewGame:public Game {
 								ship[0]->posX = player->posX;
 								ship[0]->posY = player->posY;
 								hero = 24;
-								step = 0;
+								step = -30;
 								charge = 10;
 								phase = 0;
 								score = 0;
@@ -681,122 +1056,17 @@ class NewGame:public Game {
 					for (int i = 0; i < troops; i++)
 						if(grunt[i]->alive == true)
 							if(i != hero) {
-								if(spawning < 360) { //spawn path
-									if(i < 8) {
-										if(i < 4) {
-											if(spawning == 0) {
-												grunt[i]->posX = 239; //closest 40p off screen
-												grunt[i]->posY = 360;
-											} else if(spawning > 0 + (i * 6) && spawning < 90 + (i * 6)) {
-												grunt[i]->posX += 4;
-												grunt[i]->posY -= 2;
-											} else if(spawning > 0 + (i * 6) && spawning < 160 + (i * 6)) {
-												if(grunt[i]->posX > ((325 + (i * 40)) - 6) && grunt[i]->posX < ((325 + (i * 40)) + 6))
-													grunt[i]->posX = 325 + (i * 40);
-												else 
-													grunt[i]->posX -= 4;
-												if(grunt[i]->posY > 70)
-													grunt[i]->posY -= 2;
-												else
-													grunt[i]->posY = 70;
-											}
-										} else {
-											if(spawning == 0) {
-												grunt[i]->posX = 700; //closest 40p off screen
-												grunt[i]->posY = 360;
-											} else if(spawning > 0 + ((7 - i) * 6) && spawning < 90 + ((7 - i) * 6)) {
-												grunt[i]->posX -= 4;
-												grunt[i]->posY -= 2;
-											} else if(spawning > 0 + ((7 - i) * 6) && spawning < 160 + ((7 - i) * 6)) {
-												if(grunt[i]->posX > ((325 + (i * 40)) - 6) && grunt[i]->posX < ((325 + (i * 40)) + 6))
-													grunt[i]->posX = 325 + (i * 40);
-												else
-													grunt[i]->posX += 4;
-												if(grunt[i]->posY > 70)
-													grunt[i]->posY -= 2;
-												else
-													grunt[i]->posY = 70;
-											}
-										}
-									}
-									if(i < 16 && i > 7) {
-										if(i < 12) {
-											if(spawning == 0) {
-												grunt[i]->posX = 239; //closest 30p off screen
-												grunt[i]->posY = 400;
-											} else if(spawning > 60 + ((i - 8) * 6) && spawning < 150 + ((i - 8) * 6)) {
-												grunt[i]->posX += 4;
-												grunt[i]->posY -= 2;
-											} else if(spawning > 60 + ((i - 8) * 6) && spawning < 220 + ((i - 8) * 6)) {
-												if(grunt[i]->posX > ((325 + ((i - 8) * 40)) - 6) && grunt[i]->posX < ((325 + ((i - 8) * 40)) + 6))
-													grunt[i]->posX = 325 + ((i - 8) * 40);
-												else
-													grunt[i]->posX -= 4;
-												if(grunt[i]->posY > 112)
-													grunt[i]->posY -= 2;
-												else
-													grunt[i]->posY = 112;
-											}
-										} else {
-											if(spawning == 0) {
-												grunt[i]->posX = 700; //closest 30p off screen
-												grunt[i]->posY = 400;
-											} else if(spawning > 60 + ((15 - i) * 6) && spawning < 150 + ((15 - i) * 6)) {
-												grunt[i]->posX -= 4;
-												grunt[i]->posY -= 2;
-											} else if(spawning > 60 + ((15 - i) * 6) && spawning < 220 + ((15 - i) * 6)) {
-												if(grunt[i]->posX > ((325 + ((i - 8) * 40)) - 6) && grunt[i]->posX < ((325 + ((i - 8) * 40)) + 6))
-													grunt[i]->posX = 325 + ((i - 8) * 40);
-												else
-													grunt[i]->posX += 4;
-												if(grunt[i]->posY > 112)
-													grunt[i]->posY -= 2;
-												else
-													grunt[i]->posY = 112;
-											}
-										}
-									}
-									if(i < 24 && i > 15) {
-										if(i < 20) {
-											if(spawning == 0) {
-												grunt[i]->posX = 239; //closest 30p off screen
-												grunt[i]->posY = 440;
-											} else if(spawning > 120 + ((i - 16) * 6) && spawning < 210 + ((i - 16) * 6)) {
-												grunt[i]->posX += 4;
-												grunt[i]->posY -= 2;
-											} else if(spawning > 120 + ((i - 16) * 6) && spawning < 280 + ((i - 16) * 6)) {
-												if(grunt[i]->posX > ((325 + ((i - 16) * 40)) - 6) && grunt[i]->posX < ((325 + ((i - 16) * 40)) + 6))
-													grunt[i]->posX = 325 + ((i - 16) * 40);
-												else
-													grunt[i]->posX -= 4;
-												if(grunt[i]->posY > 154)
-													grunt[i]->posY -= 2;
-												else
-													grunt[i]->posY = 154;
-											}
-										} else {
-											if(spawning == 0) {
-												grunt[i]->posX = 700; //closest 30p off screen
-												grunt[i]->posY = 440;
-											} else if(spawning > 120 + ((23 - i) * 6) && spawning < 210 + ((23 - i) * 6)) {
-												grunt[i]->posX -= 4;
-												grunt[i]->posY -= 2;
-											} else if(spawning > 120 + ((23 - i) * 6) && spawning < 280 + ((23 - i) * 6)) {
-												if(grunt[i]->posX > ((325 + ((i - 16) * 40)) - 6) && grunt[i]->posX < ((325 + ((i - 16) * 40)) + 6))
-													grunt[i]->posX = 325 + ((i - 16) * 40);
-												else
-													grunt[i]->posX += 4;
-												if(grunt[i]->posY > 154)
-													grunt[i]->posY -= 2;
-												else
-													grunt[i]->posY = 154;
-											}
-										}
-									}	//return coordinates 325 + ((i * 40) - (320 * (i / 8))), 70 + (42 * (i / 8))
-								} else {
-									if(!(step % 3))
-										grunt[i]->posX += 1 * dir;
-								}
+								if(!(wave % 2))
+									enemyMovement2(grunt[i], i, spawning, dir, step);
+								else
+									enemyMovement1(grunt[i], i, spawning, dir, step);
+									
+								/*if(wave < 6)
+									enemyMovement1(grunt[i], i, spawning, dir, step);
+								else if(wave < 11)
+									enemyMovement2(grunt[i], i, spawning, dir, step);
+								else
+									enemyMovement3(grunt[i], i, spawning, dir, step);*/
 							}
 					for (int i = 0; i < rAmmo; i++) {
 						if(rockets[i]->active == true)
@@ -857,11 +1127,19 @@ class NewGame:public Game {
 					for(int i = 0; i < 3; i++)
 						if(ship[i]->alive == true)
 							ship[i]->render(this, ship[i]->posX, ship[i]->posY);
-					int board = score;
+					board = score;
 					for(int i = 0; i < 6; i++) {
 						dig = 5 - i;
 						scoreboard[(board % 10) + (dig * 10)]->render(this, 760 + (18 * dig), 106);		
 						board /= 10;
+					}
+					if (spawning < 20) {
+						board = wave;
+						for(int i = 0; i < 2; i++) {
+							dig = 1 - i;
+							waveCount[(board % 10) + (dig * 10)]->render(this, 460 + (18 * dig), 106);		
+							board /= 10;
+						}
 					}
 					xButton->render(this, 20, 20);
 					
@@ -953,12 +1231,14 @@ class NewGame:public Game {
 								reset = false;
 						if(reset == true) {
 							wave++;
-							if(wave > 10)
+							if(wave > 15)
 								room = "over";
 							else {
-								for(int i = 0; i < troops; i++)
+								for(int i = 0; i < troops; i++) {
 									grunt[i]->alive = true;
-								spawning = 0;
+									grunt[i]->posY = -70;
+								}
+								spawning = -30;
 								hero = 24;
 							}
 						}
