@@ -259,7 +259,7 @@ void swap(SDL_Event event, SDL_Keycode key, int num,vector <Sprite *> ship, Spri
 };
 
 void enemyMovement1(Sprite *A, int i, int spawning, int dir, int step) {
-	if (spawning < 360) { //spawn path
+	if (spawning < 330) { //spawn path
 		if (i < 8) {
 			if (i < 4) {
 				if (spawning < 0) {
@@ -378,7 +378,7 @@ void enemyMovement1(Sprite *A, int i, int spawning, int dir, int step) {
 }
 
 void enemyMovement2(Sprite *A, int i, int spawning, int dir, int step) {
-	if (spawning < 360) { //spawn path
+	if (spawning < 330) { //spawn path
 		if (i < 8) {
 			if (i < 4) {
 				if (spawning < 0) {
@@ -505,7 +505,7 @@ void enemyMovement2(Sprite *A, int i, int spawning, int dir, int step) {
 }
 
 void enemyMovement3(Sprite *A, int i, int spawning, int dir, int step) {
-	if (spawning < 360) { //spawn path
+	if (spawning < 330) { //spawn path
 		if (i < 8) {
 			if (i < 4) {
 				if (spawning < 0) {
@@ -891,7 +891,7 @@ class NewGame:public Game {
 								ship[0]->posX = player->posX;
 								ship[0]->posY = player->posY;
 								hero = 24;
-								step = -30;
+								step = 0;
 								charge = 10;
 								phase = 0;
 								score = 0;
