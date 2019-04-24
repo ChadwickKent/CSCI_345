@@ -10,572 +10,17 @@
 #include <sstream>
 #include <time.h>
 #include "Game.hpp"
+#include "Image.hpp"
+#include "Sprite.hpp"
+#include "Animation.hpp"
+#include "Collision.hpp"
+#include "MouseCollision.hpp"
+#include "Swap.hpp"
+#include "SpawnPath1.hpp"
+#include "SpawnPath2.hpp"
+#include "SpawnPath3.hpp"
 
 using namespace std;
-
-class Image { // images are used for any static image (doesn't need to check for collision -chad)
-	SDL_Texture *texture;
-	int XPos;
-	int YPos;
-	protected:
-		SDL_Rect src;
-	public:
-		Image(Game *game, string filename) {
-			SDL_Surface *surface;
-			surface = SDL_LoadBMP(filename.c_str());
-			if(surface == NULL) {
-				cout << "ERROR: Loading Image" << endl;
-				return;
-			}
-			Uint32 colorKey = SDL_MapRGB(surface->format, 0, 0xFF, 0);
-			SDL_SetColorKey(surface, SDL_TRUE, colorKey);
-			SDL_Renderer *renderer = game->getRenderer();
-			texture = SDL_CreateTextureFromSurface(renderer, surface);
-			if(texture == NULL) {
-				cout << "ERROR: Loading Image" << endl;
-				return;
-			}
-			SDL_QueryTexture(texture, NULL, NULL, &(src.w), &(src.h));
-			src.x = 0;
-			src.y = 0;
-			SDL_FreeSurface(surface);
-		}
-		SDL_Rect getSize() {
-			return src;
-		}
-		int getX() {
-			return XPos;
-		}
-		int getY() {
-			return YPos;
-		}
-		void render(Game *game, int x = 0, int y = 0) {
-			SDL_Rect dest;
-			dest.w = src.w;
-			dest.h = src.h;
-			dest.x = x;
-			dest.y = y;
-			XPos = x;
-			YPos = y;
-			SDL_Renderer *renderer= game->getRenderer();
-			SDL_RenderCopy(renderer, texture, &src, &dest);
-		}
-};
-
-//typedef pair<Image *,int /*time */> frameWithTime;
-
-/*class Animation { // haven't used yet -chad
-	vector < frameWithTime > frames;
-	int time, totalTime, frame;
-	public:
-	Animation(Game *game, string path, int count, int fps = 10) {
-		stringstream filename;
-		totalTime = 0;
-		for (int i = 0;i < count; i++) {
-			filename << path << setw(5) << setfill('0') << i << ".bmp";
-			Image *img = new Image(game, filename.str());
-			frames.push_back(frameWithTime(img, 1000 / fps));
-			totalTime += 1000 / fps;
-		}
-		frame=0;
-	}
-	void update(float dt) {
-		time += (int)dt;
-		time = time % totalTime;
-		int currentTime=time;
-		for (int i = 0;i < frames.size();i++) {
-			if (currentTime < frames[i].second) {
-				frame = i;
-				break;
-			}
-			currentTime -= frames[i].second;
-		}
-	}
-	SDL_Rect getSize() {
-		SDL_Rect neverHappen;
-		if (frames.size()>0) return frames[frame].first->getSize();
-		return neverHappen;
-	}
-	void render(Game *game, int x = 0,int y =0) {
-		frames[frame].first->render(game, x, y);
-	}
-};*/
-
-class Sprite {
-	SDL_Texture *texture;
-	protected:
-		SDL_Rect src;
-	public:
-		int posX = 0;
-		int posY = 0;
-		int w = 0;
-		int h = 0;
-		bool alive = true;
-		bool active = false;
-		int weapon = 0;
-		Sprite(Game *game, string filename, int newX, int newY) {
-			posX = newX;
-			posY = newY;
-			
-			SDL_Surface *surface;
-			surface = SDL_LoadBMP(filename.c_str());
-			if(surface == NULL) {
-				cout << "ERROR: Loading Sprite for Surface" << endl;
-				return;
-			}
-			
-			Uint32 colorKey = SDL_MapRGB(surface->format, 0, 0xFF, 0);
-			SDL_SetColorKey(surface, SDL_TRUE, colorKey);
-			SDL_Renderer *renderer = game->getRenderer();
-			texture = SDL_CreateTextureFromSurface(renderer, surface);
-			if(texture == NULL) {
-				cout << "ERROR: Loading Sprite for Texture" << endl;
-				return;
-			}
-			SDL_QueryTexture(texture, NULL, NULL, &(src.w), &(src.h));
-			src.x = 0;
-			src.y = 0;
-			SDL_FreeSurface(surface);
-			w = src.w;
-			h = src.h;
-		}
-		SDL_Rect getSize() {
-			return src;
-		}
-		void render(Game *game, int x, int y) {
-			SDL_Rect dest;
-			dest.w = src.w;
-			dest.h = src.h;
-			dest.x = x;
-			dest.y = y;
-			SDL_Renderer *renderer= game->getRenderer();
-			SDL_RenderCopy(renderer, texture, &src, &dest);
-		}
-};
-
-int collision(Sprite *A, Sprite *B){
-	if(A->posX > B->posX && A->posX < (B->posX + B->w) && A->posY > B->posY && A->posY < (B->posY + B->h)) {
-		A->alive = false;
-		B->alive = false;
-	}
-	if((A->posX + A->w) > B->posX && (A->posX + A->w) < (B->posX + B->w) && A->posY > B->posY && A->posY < (B->posY + B->h)) {
-		A->alive = false;
-		B->alive = false;
-	}
-	if(A->posX > B->posX && A->posX < (B->posX + B->w) && (A->posY + A->h) > B->posY && (A->posY + A->h) < (B->posY + B->h)) {
-		A->alive = false;
-		B->alive = false;
-	}
-	if((A->posX + A->w) > B->posX && (A->posX + A->w) < (B->posX + B->w) && (A->posY + A->h) > B->posY && (A->posY + A->h) < (B->posY + B->h)) {
-		A->alive = false;
-		B->alive = false;
-	}
-	if(A->posX < B->posX && (A->posX + A->w) > (B->posX + B->w) && A->posY > B->posY && (A->posY + A->h) < (B->posY + B->h)) {
-		A->alive = false;
-		B->alive = false;
-	}
-	if(B->alive == false)
-		return 250;
-	else
-		return 0;
-};
-
-bool mouseCollision(Image *button, SDL_Event event) { // Checks if Mouse is over the Button -Joey
-	int x, y;
-	int ins = true;
-	SDL_GetMouseState(&x, &y);
-	if (x < button->getX()){
-		ins = false;
-	} else if (x > button->getX() + button->getSize().w) {
-		ins = false;
-	} else if (y < button->getY()) {
-		ins = false;
-	} else if (y > button->getY() + button->getSize().h) {
-		ins = false;
-	}
-	return ins;
-}
-
-void swap(SDL_Event event, SDL_Keycode key, int num,vector <Sprite *> ship, Sprite *player, Sprite *temp) {
-	if(event.key.keysym.sym == key && ship[num]->active == false && ship[num]->alive == true) {
-								player->weapon = ship[num]->weapon;
-								for(int i = 0; i < 3; i++)
-									if(ship[i]->active == true) {
-										ship[i]->posX = temp->posX;
-										ship[i]->posY = temp->posY;
-										ship[i]->active = false;
-									}
-								ship[num]->active = true;
-								temp->posX = ship[num]->posX;
-								temp->posY = ship[num]->posY;
-								ship[num]->posY = player->posY;
-							}
-};
-
-void enemyMovement1(Sprite *A, int i, int spawning, int dir, int step) {
-	if (spawning < 330) { //spawn path
-		if (i < 8) {
-			if (i < 4) {
-				if (spawning < 0) {
-					A->posX = 239; //closest 40p off screen
-					A->posY = 360;
-				} else if (spawning > 0 + (i * 6) && spawning < 90 + (i * 6)) {
-					A->posX += 4;
-					A->posY -= 2;
-				} else if (spawning > 0 + (i * 6) && spawning < 160 + (i * 6)) {
-					if (A->posX > ((325 + (i * 40)) - 6) && A->posX < ((325 + (i * 40)) + 6))
-						A->posX = 325 + (i * 40);
-					else
-						A->posX -= 4;
-					if (A->posY > 70)
-						A->posY -= 2;
-					else
-						A->posY = 70;
-				}
-			} else {
-				if (spawning < 0) {
-					A->posX = 700; //closest 40p off screen
-					A->posY = 360;
-				} else if (spawning > 0 + ((7 - i) * 6) && spawning < 90 + ((7 - i) * 6)) {
-					A->posX -= 4;
-					A->posY -= 2;
-				} else if (spawning > 0 + ((7 - i) * 6) && spawning < 160 + ((7 - i) * 6)) {
-					if (A->posX > ((325 + (i * 40)) - 6) && A->posX < ((325 + (i * 40)) + 6))
-						A->posX = 325 + (i * 40);
-					else
-						A->posX += 4;
-					if (A->posY > 70)
-						A->posY -= 2;
-					else
-						A->posY = 70;
-				}
-			}
-		}
-		if (i < 16 && i > 7) {
-			if (i < 12) {
-				if (spawning < 0) {
-					A->posX = 239; //closest 30p off screen
-					A->posY = 400;
-				} else if (spawning > 60 + ((i - 8) * 6) && spawning < 150 + ((i - 8) * 6)) {
-					A->posX += 4;
-					A->posY -= 2;
-				} else if (spawning > 60 + ((i - 8) * 6) && spawning < 220 + ((i - 8) * 6)) {
-					if (A->posX > ((325 + ((i - 8) * 40)) - 6) && A->posX < ((325 + ((i - 8) * 40)) + 6))
-						A->posX = 325 + ((i - 8) * 40);
-					else
-						A->posX -= 4;
-					if (A->posY > 112)
-						A->posY -= 2;
-					else
-						A->posY = 112;
-				}
-			} else {
-				if (spawning < 0) {
-					A->posX = 700; //closest 30p off screen
-					A->posY = 400;
-				} else if (spawning > 60 + ((15 - i) * 6) && spawning < 150 + ((15 - i) * 6)) {
-					A->posX -= 4;
-					A->posY -= 2;
-				} else if (spawning > 60 + ((15 - i) * 6) && spawning < 220 + ((15 - i) * 6)) {
-					if (A->posX > ((325 + ((i - 8) * 40)) - 6) && A->posX < ((325 + ((i - 8) * 40)) + 6))
-						A->posX = 325 + ((i - 8) * 40);
-					else
-						A->posX += 4;
-					if (A->posY > 112)
-						A->posY -= 2;
-					else
-						A->posY = 112;
-				}
-			}
-		}
-		if (i < 24 && i > 15) {
-			if (i < 20)	{
-				if (spawning < 0) {
-					A->posX = 239; //closest 30p off screen
-					A->posY = 440;
-				} else if (spawning > 120 + ((i - 16) * 6) && spawning < 210 + ((i - 16) * 6)) {
-					A->posX += 4;
-					A->posY -= 2;
-				} else if (spawning > 120 + ((i - 16) * 6) && spawning < 280 + ((i - 16) * 6)) {
-					if (A->posX > ((325 + ((i - 16) * 40)) - 6) && A->posX < ((325 + ((i - 16) * 40)) + 6))
-						A->posX = 325 + ((i - 16) * 40);
-					else
-						A->posX -= 4;
-					if (A->posY > 154)
-						A->posY -= 2;
-					else
-						A->posY = 154;
-				}
-			} else {
-				if (spawning < 0) {
-					A->posX = 700; //closest 30p off screen
-					A->posY = 440;
-				} else if (spawning > 120 + ((23 - i) * 6) && spawning < 210 + ((23 - i) * 6)) {
-					A->posX -= 4;
-					A->posY -= 2;
-				} else if (spawning > 120 + ((23 - i) * 6) && spawning < 280 + ((23 - i) * 6)) {
-					if (A->posX > ((325 + ((i - 16) * 40)) - 6) && A->posX < ((325 + ((i - 16) * 40)) + 6))
-						A->posX = 325 + ((i - 16) * 40);
-					else
-						A->posX += 4;
-					if (A->posY > 154)
-						A->posY -= 2;
-					else
-						A->posY = 154;
-				}
-			}
-		} //return coordinates 325 + ((i * 40) - (320 * (i / 8))), 70 + (42 * (i / 8))
-	} else {
-		if (!(step % 3))
-			A->posX += 1 * dir;
-	}
-}
-
-void enemyMovement2(Sprite *A, int i, int spawning, int dir, int step) {
-	if (spawning < 330) { //spawn path
-		if (i < 8) {
-			if (i < 4) {
-				if (spawning < 0) {
-					A->posX = 239;
-					A->posY = 360;
-				} else if (spawning > 0 + (i * 6) && spawning < 55 + (i * 6))
-					A->posX += 4;
-				else if (spawning > 0 + (i * 6) && spawning < 105 + (i * 6))
-					A->posY -= 4;
-				else if (spawning > 0 + (i * 6) && spawning < 140 + (i * 6)) {
-					if (A->posX > ((325 + (i * 40)) - 6) && A->posX < ((325 + (i * 40)) + 6))
-						A->posX = 325 + (i * 40);
-					else
-						A->posX -= 4;
-				} else if (spawning > 0 + (i * 6) && spawning < 225 + (i * 6)) {
-					if (A->posY > 70)
-						A->posY -= 4;
-					else
-						A->posY = 70;
-				}
-			} else {
-				if (spawning < 0) {
-					A->posX = 700;
-					A->posY = 360;
-				} else if (spawning > 0 + ((7 - i) * 6) && spawning < 55 + ((7 - i) * 6))
-					A->posX -= 4;
-				else if (spawning > 0 + ((7 - i) * 6) && spawning < 105 + ((7 - i) * 6))
-					A->posY -= 4;
-				else if (spawning > 0 + ((7 - i) * 6) && spawning < 140 + ((7 - i) * 6)) {
-					if (A->posX > ((325 + (i * 40)) - 6) && A->posX < ((325 + (i * 40)) + 6))
-						A->posX = 325 + (i * 40);
-					else
-						A->posX += 4;
-				} else if (spawning > 0 + ((7 - i) * 6) && spawning < 225 + ((7 - i) * 6)) {
-					if (A->posY > 70)
-						A->posY -= 4;
-					else
-						A->posY = 70;
-				}
-			}
-		}
-		if (i < 16 && i > 7) {
-			if (i < 12) {
-				if (spawning < 0) {
-					A->posX = 239;
-					A->posY = 360;
-				} else if (spawning > 60 + ((i - 8) * 6) && spawning < 115 + ((i - 8) * 6))
-					A->posX += 4;
-				else if (spawning > 60 + ((i - 8) * 6) && spawning < 165 + ((i - 8) * 6))
-					A->posY -= 4;
-				else if (spawning > 60 + ((i - 8) * 6) && spawning < 200 + ((i - 8) * 6)) {
-					if (A->posX > ((325 + ((i - 8) * 40)) - 6) && A->posX < ((325 + ((i - 8) * 40)) + 6))
-						A->posX = 325 + ((i - 8) * 40);
-					else
-						A->posX -= 4;
-				} else if (spawning > 60 + ((i - 8) * 6) && spawning < 285 + ((i - 8) * 6)) {
-					if (A->posY > 112)
-						A->posY -= 4;
-					else
-						A->posY = 112;
-				}
-			} else {
-				if (spawning < 0) {
-					A->posX = 700; //closest 30p off screen
-					A->posY = 360;
-				} else if (spawning > 60 + ((15 - i) * 6) && spawning < 115 + ((15 - i) * 6))
-					A->posX -= 4;
-				else if (spawning > 60 + ((15 - i) * 6) && spawning < 165 + ((15 - i) * 6))
-					A->posY -= 4;
-				else if (spawning > 60 + ((15 - i) * 6) && spawning < 200 + ((15 - i) * 6)) {
-					if (A->posX > ((325 + ((i - 8) * 40)) - 6) && A->posX < ((325 + ((i - 8) * 40)) + 6))
-						A->posX = 325 + ((i - 8) * 40);
-					else
-						A->posX += 4;
-				} else if (spawning > 60 + ((15 - i) * 6) && spawning < 285 + ((15 - i) * 6)) {
-					if (A->posY > 112)
-						A->posY -= 4;
-					else
-						A->posY = 112;
-				}
-			}
-		}
-		if (i < 24 && i > 15) {
-			if (i < 20)	{
-				if (spawning < 0) {
-					A->posX = 239;
-					A->posY = 360;
-				} else if (spawning > 120 + ((i - 16) * 6) && spawning < 175 + ((i - 16) * 6))
-					A->posX += 4;
-				else if (spawning > 120 + ((i - 16) * 6) && spawning < 227 + ((i - 16) * 6)){
-					if (A->posY > 154)
-						A->posY -= 4;
-					else
-						A->posY = 154;
-				} else if (spawning > 120 + ((i - 16) * 6) && spawning < 260 + ((i - 16) * 6)) {
-					if (A->posX > ((325 + ((i - 16) * 40)) - 6) && A->posX < ((325 + ((i - 16) * 40)) + 6))
-						A->posX = 325 + ((i - 16) * 40);
-					else
-						A->posX -= 4;
-				}
-			} else {
-				if (spawning < 0) {
-					A->posX = 700;
-					A->posY = 360;
-				} else if (spawning > 120 + ((23 - i) * 6) && spawning < 175 + ((23 - i) * 6))
-					A->posX -= 4;
-				else if (spawning > 120 + ((23 - i) * 6) && spawning < 227 + ((23 - i) * 6)) {
-					if (A->posY > 154)
-						A->posY -= 4;
-					else
-						A->posY = 154;
-				} else if (spawning > 120 + ((23 - i) * 6) && spawning < 260 + ((23 - i) * 6)) {
-					if (A->posX > ((325 + ((i - 16) * 40)) - 6) && A->posX < ((325 + ((i - 16) * 40)) + 6))
-						A->posX = 325 + ((i - 16) * 40);
-					else
-						A->posX += 4;
-				}
-			}
-		} //return coordinates 325 + ((i * 40) - (320 * (i / 8))), 70 + (42 * (i / 8))
-	} else {
-		if (!(step % 3))
-			A->posX += 1 * dir;
-	}
-}
-
-void enemyMovement3(Sprite *A, int i, int spawning, int dir, int step) {
-	if (spawning < 330) { //spawn path
-		if (i < 8) {
-			if (i < 4) {
-				if (spawning < 0) {
-					A->posX = 239; //closest 40p off screen
-					A->posY = 360;
-				} else if (spawning > 0 + (i * 6) && spawning < 90 + (i * 6)) {
-					A->posX += 4;
-					A->posY -= 2;
-				} else if (spawning > 0 + (i * 6) && spawning < 160 + (i * 6)) {
-					if (A->posX > ((325 + (i * 40)) - 6) && A->posX < ((325 + (i * 40)) + 6))
-						A->posX = 325 + (i * 40);
-					else
-						A->posX -= 4;
-					if (A->posY > 70)
-						A->posY -= 2;
-					else
-						A->posY = 70;
-				}
-			} else {
-				if (spawning < 0) {
-					A->posX = 700; //closest 40p off screen
-					A->posY = 360;
-				} else if (spawning > 0 + ((7 - i) * 6) && spawning < 90 + ((7 - i) * 6)) {
-					A->posX -= 4;
-					A->posY -= 2;
-				} else if (spawning > 0 + ((7 - i) * 6) && spawning < 160 + ((7 - i) * 6)) {
-					if (A->posX > ((325 + (i * 40)) - 6) && A->posX < ((325 + (i * 40)) + 6))
-						A->posX = 325 + (i * 40);
-					else
-						A->posX += 4;
-					if (A->posY > 70)
-						A->posY -= 2;
-					else
-						A->posY = 70;
-				}
-			}
-		}
-		if (i < 16 && i > 7) {
-			if (i < 12) {
-				if (spawning < 0) {
-					A->posX = 239; //closest 30p off screen
-					A->posY = 400;
-				} else if (spawning > 60 + ((i - 8) * 6) && spawning < 150 + ((i - 8) * 6)) {
-					A->posX += 4;
-					A->posY -= 2;
-				} else if (spawning > 60 + ((i - 8) * 6) && spawning < 220 + ((i - 8) * 6)) {
-					if (A->posX > ((325 + ((i - 8) * 40)) - 6) && A->posX < ((325 + ((i - 8) * 40)) + 6))
-						A->posX = 325 + ((i - 8) * 40);
-					else
-						A->posX -= 4;
-					if (A->posY > 112)
-						A->posY -= 2;
-					else
-						A->posY = 112;
-				}
-			} else {
-				if (spawning < 0) {
-					A->posX = 700; //closest 30p off screen
-					A->posY = 400;
-				} else if (spawning > 60 + ((15 - i) * 6) && spawning < 150 + ((15 - i) * 6)) {
-					A->posX -= 4;
-					A->posY -= 2;
-				} else if (spawning > 60 + ((15 - i) * 6) && spawning < 220 + ((15 - i) * 6)) {
-					if (A->posX > ((325 + ((i - 8) * 40)) - 6) && A->posX < ((325 + ((i - 8) * 40)) + 6))
-						A->posX = 325 + ((i - 8) * 40);
-					else
-						A->posX += 4;
-					if (A->posY > 112)
-						A->posY -= 2;
-					else
-						A->posY = 112;
-				}
-			}
-		}
-		if (i < 24 && i > 15) {
-			if (i < 20)	{
-				if (spawning < 0) {
-					A->posX = 239; //closest 30p off screen
-					A->posY = 440;
-				} else if (spawning > 120 + ((i - 16) * 6) && spawning < 210 + ((i - 16) * 6)) {
-					A->posX += 4;
-					A->posY -= 2;
-				} else if (spawning > 120 + ((i - 16) * 6) && spawning < 280 + ((i - 16) * 6)) {
-					if (A->posX > ((325 + ((i - 16) * 40)) - 6) && A->posX < ((325 + ((i - 16) * 40)) + 6))
-						A->posX = 325 + ((i - 16) * 40);
-					else
-						A->posX -= 4;
-					if (A->posY > 154)
-						A->posY -= 2;
-					else
-						A->posY = 154;
-				}
-			} else {
-				if (spawning < 0) {
-					A->posX = 700; //closest 30p off screen
-					A->posY = 440;
-				} else if (spawning > 120 + ((23 - i) * 6) && spawning < 210 + ((23 - i) * 6)) {
-					A->posX -= 4;
-					A->posY -= 2;
-				} else if (spawning > 120 + ((23 - i) * 6) && spawning < 280 + ((23 - i) * 6)) {
-					if (A->posX > ((325 + ((i - 16) * 40)) - 6) && A->posX < ((325 + ((i - 16) * 40)) + 6))
-						A->posX = 325 + ((i - 16) * 40);
-					else
-						A->posX += 4;
-					if (A->posY > 154)
-						A->posY -= 2;
-					else
-						A->posY = 154;
-				}
-			}
-		} //return coordinates 325 + ((i * 40) - (320 * (i / 8))), 70 + (42 * (i / 8))
-	} else {
-		if (!(step % 3))
-			A->posX += 1 * dir;
-	}
-}
 
 class NewGame:public Game {
 	string file = "../include/";
@@ -597,7 +42,6 @@ class NewGame:public Game {
 	vector<Image *> waveCount;
 	vector<Image *> energy;
 	vector<Image *> energy2;
-	int digits = 60;
 	Sprite *player;
 	Sprite *temp;
 	vector<Sprite *> ship;
@@ -628,7 +72,7 @@ class NewGame:public Game {
 			edgeL = new Image(this, file + "frameL.bmp");
 			screen = new Image(this, file + "screen.bmp");
 			int count = 0;
-			for (int i = 0; i < digits; i++) {
+			for (int i = 0; i < 60; i++) {
 				Image *digit = new Image(this, file + "score/" + to_string(count) + ".bmp");
 				scoreboard.push_back(digit);
 				count++;
@@ -675,6 +119,7 @@ class NewGame:public Game {
 				gPulse.push_back(pulse);
 			}
 		}
+		
 		void loop() {
 			SDL_Event event;
 			unsigned start = SDL_GetTicks();
@@ -701,7 +146,7 @@ class NewGame:public Game {
 			for(int i = 0; i < 3; i++)
 				ship[i]->weapon = i;
 				// 0 = rockets  1 = pulse  2 = beam
-			
+				
 			//initializes player to be red ship
 			ship[0]->active = true;
 			player->weapon = ship[0]->weapon;
@@ -714,7 +159,7 @@ class NewGame:public Game {
 					if(event.type == SDL_QUIT)
 						running = false;
 					if(event.type == SDL_KEYDOWN) {
-						if(event.key.keysym.sym == SDLK_TAB)
+						if(event.key.keysym.sym == SDLK_p)
 							if(room == "level" || room == "pause") {
 								if(room == "level")
 									room = "pause";
@@ -808,6 +253,7 @@ class NewGame:public Game {
 							swap(event, SDLK_e, 2, ship, player, temp);
 						}
 					}
+					
 				// Button Mouse Event
 				if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN) {
 					if (mouseCollision(playButton, event) && room == "title")
@@ -891,6 +337,7 @@ class NewGame:public Game {
 							wave = 1;
 						}
 				}
+				
 				const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
 				if(room == "level" || room == "test") {
 					if(currentKeyStates[SDL_SCANCODE_RIGHT])
@@ -900,8 +347,8 @@ class NewGame:public Game {
 						if(player->posX > 310)
 							player->posX -= 5;
 				}
-				
 				SDL_Renderer *renderer = getRenderer();
+				
 				if(room == "title") {
 					background->render(this);
 					title->render(this, 259, 112);
@@ -1034,7 +481,6 @@ class NewGame:public Game {
 					for(int i = 0; i < 3; i++)
 						if(ship[i]->active == true)
 							ship[i]->posX = player->posX;
-					
 					//render
 					screen->render(this, 300, -540 + screenScroll);
 					if(hero < 24)
@@ -1089,7 +535,6 @@ class NewGame:public Game {
 						}
 					}
 					xButton->render(this, 20, 20);
-					
 					//increment
 					step++;
 					spawning++;
@@ -1100,7 +545,6 @@ class NewGame:public Game {
 					screenScroll++;
 					if(screenScroll >= 540) //reset screen
 						screenScroll = 0;
-						
 					//collision	
 						//check player
 					if(respawn > 30)
@@ -1169,7 +613,6 @@ class NewGame:public Game {
 									if(gPulse[j]->active == true)
 										collision(gPulse[j], beam);
 						}
-					
 					//wave reset
 					if(!(step % 60)) {
 						reset = true;
@@ -1303,7 +746,6 @@ class NewGame:public Game {
 					for(int i = 0; i < 3; i++)
 						if(ship[i]->active == true)
 							ship[i]->posX = player->posX;
-					
 					//render
 					screen->render(this, 300, -540 + screenScroll);
 					if(gPulse[hero]->alive == true)
@@ -1341,7 +783,6 @@ class NewGame:public Game {
 						board /= 10;
 					}
 					xButton->render(this, 20, 20);
-					
 					//increment
 					step++;
 					spawning++;
@@ -1350,7 +791,6 @@ class NewGame:public Game {
 					screenScroll++;
 					if(screenScroll >= 540) //reset screen
 						screenScroll = 0;
-						
 					//collision	
 						//check player
 					if(respawn > 30)
@@ -1417,19 +857,6 @@ class NewGame:public Game {
 										collision(gPulse[j], beam);
 				
 						}
-					//wave reset
-					/*if(!(step % 60)) {
-						reset = true;
-						for(int i = 0; i < troops; i++)
-							if(grunt[i]->alive == true)
-								reset = false;
-						if(reset == true) {
-							for(int i = 0; i < troops; i++)
-								grunt[i]->alive = true;
-							spawning = 0;
-							hero = 24;
-						}
-					}*/
 				} else if(room == "pause") {
 					screen->render(this, 300, -540 + screenScroll);
 					pauseButton->render(this, 423, 112);
@@ -1478,7 +905,7 @@ class NewGame:public Game {
 			}
 		}
 };
-	
+
 int  main(int argc, char* argv[]) {
 	Game *SF;
 	SF = new NewGame();
