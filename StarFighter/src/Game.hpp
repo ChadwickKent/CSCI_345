@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <iostream>
 
+using namespace std;
+
 class Game { 
 	SDL_Window *window;
 	SDL_Renderer *renderer;
