@@ -679,11 +679,9 @@ class NewGame:public Game {
 			SDL_Event event;
 			unsigned start = SDL_GetTicks();
 			bool running = true;
-			bool paused = false;
 			bool reset = false;
 			bool godmode = false;
 			string room = "title";
-			string ph = "level";
 			int step = -30;			//ticks
 			int screenScroll = 0;
 			int dir = 1;			//direction
@@ -717,17 +715,12 @@ class NewGame:public Game {
 						running = false;
 					if(event.type == SDL_KEYDOWN) {
 						if(event.key.keysym.sym == SDLK_TAB)
-							if(room != "title")
-								if(room != "over") {
-									if(paused == false) {
-										ph = room;
-										paused = true;
-										room = "pause";
-									} else {
-										paused = false;
-										room = ph;
-									}
-								}
+							if(room == "level" || room == "pause") {
+								if(room == "level")
+									room = "pause";
+								else
+									room = "level";
+							}
 						if(event.key.keysym.sym == SDLK_ESCAPE) //quits
 							running = false;
 						if(room == "level") {
