@@ -1,5 +1,13 @@
-SDLPATH		=C:\Users\chadk\Desktop\StarFighter\SDL2-2.0.9\i686-w64-mingw32
-IncludePath	=$(SDLPATH)\include\SDL2
-LDPATH		=$(SDLPATH)\
+SDLPATH 	=C:\mingw_dev
+IncludePath =$(SDLPATH)\include\SDL2
+LDPATH 		=$(SDLPATH)\lib
+CFlags 		=-static -I $(IncludePath) -L $(LDPATH) -g
+LDFlags		=-lmingw32 -lSDL2main -lSDL2.dll
+ExeName 	=StarFighter.exe
+Headers		=Game.hpp
 
-
+$(ExeName): StarFighter.cpp $(Headers)
+	g++ $(CFlags) -o $@ $< $(LDFlags)
+	
+clean:
+	delete $(ExeName)
