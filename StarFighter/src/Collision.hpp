@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SDL.h"
+#include "SDL_mixer.h"
 #include <string>
 #include <time.h>
 #include <stdio.h>
@@ -9,7 +10,7 @@
 
 using namespace std;
 
-int collision(Sprite *A, Sprite *B){
+int collision(Sprite *A, Sprite *B, Mix_Chunk *sound){
 	if(A->posX > B->posX && A->posX < (B->posX + B->w) && A->posY > B->posY && A->posY < (B->posY + B->h)) {
 		A->alive = false;
 		B->alive = false;
@@ -30,8 +31,9 @@ int collision(Sprite *A, Sprite *B){
 		A->alive = false;
 		B->alive = false;
 	}
-	if(B->alive == false)
+	if(B->alive == false) {
+		Mix_PlayChannel( -1, sound, 0 );
 		return 250;
-	else
+	} else
 		return 0;
 };

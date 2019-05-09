@@ -1,5 +1,6 @@
 #define SDL_MAIN_HANDLED
 #include "SDL.h"
+#include "SDL_mixer.h"
 #include <stdio.h>
 #include <iostream>
 #include <iomanip>
@@ -24,6 +25,12 @@ using namespace std;
 
 class NewGame:public Game {
 	string file = "../include/";
+	Mix_Music *music = NULL;
+	Mix_Chunk *rocketS = NULL;
+	Mix_Chunk *pulseS = NULL;
+	Mix_Chunk *beamS = NULL;
+	Mix_Chunk *collisionS = NULL;
+	Mix_Chunk *selectS = NULL;
 	Image *background;
 	Image *title;
 	Image *optionsMenu;
@@ -57,6 +64,12 @@ class NewGame:public Game {
 	public:
 		NewGame():Game("StarFighter", 960, 540){}
 		void init() {
+			music = Mix_LoadMUS("../include/audio/bgm.wav");
+			rocketS = Mix_LoadWAV("../include/audio/rocket.wav");
+			pulseS = Mix_LoadWAV("../include/audio/pulse.wav");
+			beamS = Mix_LoadWAV("../include/audio/beam.wav");
+			collisionS = Mix_LoadWAV("../include/audio/collision.wav");
+			selectS = Mix_LoadWAV("../include/audio/select.wav");
 			background = new Image(this, file + "bgd.bmp");
 			title = new Image(this, file + "title.bmp");
 			optionsMenu = new Image(this, file + "optionsMenu.bmp");
@@ -118,6 +131,8 @@ class NewGame:public Game {
 				Sprite *pulse = new Sprite(this, file + "pulse.bmp", grunt[i]->posX, grunt[i]->posY);
 				gPulse.push_back(pulse);
 			}
+			Mix_VolumeMusic(50);
+			Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
 		}
 		
 		void loop() {
@@ -154,10 +169,13 @@ class NewGame:public Game {
 			temp->posY = ship[0]->posY;	
 			ship[0]->posY = player->posY;
 			
+			
 			while(running) {
 				if(SDL_PollEvent(&event))
-					if(event.type == SDL_QUIT)
+					if(event.type == SDL_QUIT) {
+						Mix_FreeMusic(music);
 						running = false;
+					}
 					if(event.type == SDL_KEYDOWN) {
 						if(event.key.keysym.sym == SDLK_p)
 							if(room == "level" || room == "pause") {
@@ -179,6 +197,7 @@ class NewGame:public Game {
 												rockets[i]->posY = player->posY + 3;
 												rockets[i]->active = true;
 												fired = true;
+												Mix_PlayChannel( -1, rocketS, 0 );
 											}
 								}
 							if(player->weapon == 1)
@@ -191,6 +210,7 @@ class NewGame:public Game {
 												sPulse[i]->posY = player->posY + 3;
 												sPulse[i]->active = true;
 												fired = true;
+												Mix_PlayChannel( -1, pulseS, 0 );
 											}
 								}
 							if(player->weapon == 2)
@@ -259,6 +279,7 @@ class NewGame:public Game {
 					if (mouseCollision(playButton, event) && room == "title")
 						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
 								room = "level";
+								Mix_PlayChannel( -1, selectS, 0 );
 								spawning = -30;
 								player->posX = 465;
 								for(int i = 0; i < 10; i++) {
@@ -294,6 +315,7 @@ class NewGame:public Game {
 					if (mouseCollision(trainingButton, event) && room == "title")
 						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
 							room = "test";
+							Mix_PlayChannel( -1, selectS, 0 );
 							spawning = 0;
 							player->posX = 465;
 							for(int i = 0; i < 10; i++) {
@@ -325,14 +347,19 @@ class NewGame:public Game {
 							score = 0;
 						}
 					if (mouseCollision(optionsButton, event) && room == "title")
-						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT)
+						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
 							room = "option";
+							Mix_PlayChannel( -1, selectS, 0 );
+						}
 					if (mouseCollision(controlsButton, event) && room == "title")
-						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT)
+						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
 							room = "control";
+							Mix_PlayChannel( -1, selectS, 0 );
+						}
 					if (mouseCollision(xButton, event) && room != "title")
 						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
 							room = "title";
+							Mix_PlayChannel( -1, selectS, 0 );
 							gameOver = 0;
 							wave = 1;
 						}
@@ -348,6 +375,10 @@ class NewGame:public Game {
 							player->posX -= 5;
 				}
 				SDL_Renderer *renderer = getRenderer();
+				
+				//bgm
+				if( Mix_PlayingMusic() == 0 )
+					Mix_PlayMusic( music, -1 );
 				
 				if(room == "title") {
 					background->render(this);
@@ -406,6 +437,8 @@ class NewGame:public Game {
 							charge++;
 					if(phase > 5)
 						beam->active = false;
+					else
+						Mix_PlayChannel( -1, rocketS, 0 );
 					if(hero < 24)
 						if(grunt[hero]->alive == true) { //active enemy path
 							grunt[hero]->posY += 4;
@@ -454,13 +487,6 @@ class NewGame:public Game {
 									enemyMovement2(grunt[i], i, spawning, dir, step);
 								else
 									enemyMovement1(grunt[i], i, spawning, dir, step);
-									
-								/*if(wave < 6)
-									enemyMovement1(grunt[i], i, spawning, dir, step);
-								else if(wave < 11)
-									enemyMovement2(grunt[i], i, spawning, dir, step);
-								else
-									enemyMovement3(grunt[i], i, spawning, dir, step);*/
 							}
 					for (int i = 0; i < rAmmo; i++) {
 						if(rockets[i]->active == true)
@@ -553,12 +579,12 @@ class NewGame:public Game {
 								if(ship[i]->active == true) {
 									for (int j = 0; j < troops; j++)
 										if(grunt[j]->alive == true)
-											collision(grunt[j], ship[i]);
+											collision(grunt[j], ship[i], collisionS);
 									for (int j = 0; j < troops; j++)
 										if(gPulse[j]->alive == true)
-											collision(gPulse[j], ship[i]);
+											collision(gPulse[j], ship[i], collisionS);
 									if(ship[i]->alive == false)
-										if(gameOver > 1){
+										if(gameOver > 1) {
 											player->alive = false;
 											room = "over";
 										}
@@ -584,34 +610,34 @@ class NewGame:public Game {
 							if(rockets[i]->active == true) {
 								for (int j = 0; j < troops; j++)
 									if(grunt[j]->alive == true)
-										score += collision(rockets[i], grunt[j]);
+										score += collision(rockets[i], grunt[j], collisionS);
 								for (int j = 0; j < troops; j++)
 									if(gPulse[j]->alive == true)
 										if(gPulse[j]->active == true)
-											collision(gPulse[j], rockets[i]);
+											collision(gPulse[j], rockets[i], collisionS);
 							}
 					for (int i = 0; i < pAmmo; i++)
 						if(sPulse[i]->alive == true)
 							if(sPulse[i]->active == true) {
 								for (int j = 0; j < troops; j++)
 									if(grunt[j]->alive == true)
-										score += collision(sPulse[i], grunt[j]);
+										score += collision(sPulse[i], grunt[j], collisionS);
 								for (int j = 0; j < troops; j++)
 									if(gPulse[j]->alive == true)
 										if(gPulse[j]->active == true)
-											collision(gPulse[j], sPulse[i]);
+											collision(gPulse[j], sPulse[i], collisionS);
 							}
 					if(beam->active == true)
 						if(beam->active == true) {
 							for (int j = 0; j < troops; j++) {
 								beam->alive = true;
 								if(grunt[j]->alive == true)
-									score += collision(grunt[j], beam);
+									score += collision(grunt[j], beam, collisionS);
 							}
 							for (int j = 0; j < troops; j++)
 								if(gPulse[j]->alive == true)
 									if(gPulse[j]->active == true)
-										collision(gPulse[j], beam);
+										collision(gPulse[j], beam, collisionS);
 						}
 					//wave reset
 					if(!(step % 60)) {
@@ -679,6 +705,8 @@ class NewGame:public Game {
 							charge += 50;
 					if(phase > 5)
 						beam->active = false;
+					else
+						Mix_PlayChannel( -1, rocketS, 0 );
 					if(hero < 24)
 						if(grunt[hero]->alive == true) { //active enemy path
 							grunt[hero]->posY += 4;
@@ -827,34 +855,34 @@ class NewGame:public Game {
 							if(rockets[i]->active == true) {
 								for (int j = 0; j < troops; j++)
 									if(grunt[j]->alive == true)
-										score += collision(rockets[i], grunt[j]);
+										score += collision(rockets[i], grunt[j], collisionS);
 								for (int j = 0; j < troops; j++)
 									if(gPulse[j]->alive == true)
 										if(gPulse[j]->active == true)
-											collision(gPulse[j], rockets[i]);
+											collision(gPulse[j], rockets[i], collisionS);
 							}
 					for (int i = 0; i < pAmmo; i++)
 						if(sPulse[i]->alive == true)
 							if(sPulse[i]->active == true) {
 								for (int j = 0; j < troops; j++)
 									if(grunt[j]->alive == true)
-										score += collision(sPulse[i], grunt[j]);
+										score += collision(sPulse[i], grunt[j], collisionS);
 								for (int j = 0; j < troops; j++)
 									if(gPulse[j]->alive == true)
 										if(gPulse[j]->active == true)
-											collision(gPulse[j], sPulse[i]);
+											collision(gPulse[j], sPulse[i], collisionS);
 							}
 					if(beam->active == true)
 						if(beam->active == true) {
 							for (int j = 0; j < troops; j++) {
 								beam->alive = true;
 								if(grunt[j]->alive == true)
-									score += collision(grunt[j], beam);
+									score += collision(grunt[j], beam, collisionS);
 							}
 							for (int j = 0; j < troops; j++)
 								if(gPulse[j]->alive == true)
 									if(gPulse[j]->active == true)
-										collision(gPulse[j], beam);
+										collision(gPulse[j], beam, collisionS);
 				
 						}
 				} else if(room == "pause") {
