@@ -41,10 +41,18 @@ class NewGame:public Game {
 	Image *controlsButton;
 	Image *pauseButton;
 	Image *xButton;
+	Image *speakerButton;
+	Image *muteButton;
 	Image *gameoverButton;
+	Image *upMusicButton;
+	Image *downMusicButton;
+	Image *upSFXButton;
+	Image *downSFXButton;
 	Image *edgeR;
 	Image *edgeL;
 	Image *screen;
+	vector<Image *> musicLight;
+	vector<Image *> sfxLight;
 	vector<Image *> scoreboard;
 	vector<Image *> waveCount;
 	vector<Image *> energy;
@@ -64,12 +72,19 @@ class NewGame:public Game {
 	public:
 		NewGame():Game("StarFighter", 960, 540){}
 		void init() {
+			Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 1024);
 			music = Mix_LoadMUS("../include/audio/bgm.wav");
+			Mix_VolumeMusic(14);
 			rocketS = Mix_LoadWAV("../include/audio/rocket.wav");
+			Mix_VolumeChunk(rocketS, 10);
 			pulseS = Mix_LoadWAV("../include/audio/pulse.wav");
+			Mix_VolumeChunk(pulseS, 10);
 			beamS = Mix_LoadWAV("../include/audio/beam.wav");
+			Mix_VolumeChunk(beamS, 10);
 			collisionS = Mix_LoadWAV("../include/audio/collision.wav");
+			Mix_VolumeChunk(collisionS, 10);
 			selectS = Mix_LoadWAV("../include/audio/select.wav");
+			Mix_VolumeChunk(selectS, 10);
 			background = new Image(this, file + "bgd.bmp");
 			title = new Image(this, file + "title.bmp");
 			optionsMenu = new Image(this, file + "optionsMenu.bmp");
@@ -80,10 +95,22 @@ class NewGame:public Game {
 			controlsButton = new Image(this, file + "controlsButton.bmp");
 			pauseButton = new Image(this, file + "pauseButton.bmp");
 			xButton = new Image(this, file + "xButton.bmp");
+			speakerButton = new Image(this, file + "speakerButton.bmp");
+			muteButton = new Image(this, file + "muteButton.bmp");
 			gameoverButton = new Image(this, file + "gameoverButton.bmp");
+			upMusicButton = new Image(this, file + "upArrowButton.bmp");
+			downMusicButton = new Image(this, file + "downArrowButton.bmp");
+			upSFXButton = new Image(this, file + "upArrowButton.bmp");
+			downSFXButton = new Image(this, file + "downArrowButton.bmp");
 			edgeR = new Image(this, file + "frameR.bmp");
 			edgeL = new Image(this, file + "frameL.bmp");
 			screen = new Image(this, file + "screen.bmp");
+			for (int i = 0; i < 10; i++) {
+				Image *light = new Image(this, file + "light.bmp");
+				musicLight.push_back(light);
+				Image *light2 = new Image(this, file + "light.bmp");
+				sfxLight.push_back(light2);
+			}
 			int count = 0;
 			for (int i = 0; i < 60; i++) {
 				Image *digit = new Image(this, file + "score/" + to_string(count) + ".bmp");
@@ -100,40 +127,35 @@ class NewGame:public Game {
 				if(count > 9)
 					count = 0;
 			}
-			for (int i = 0; i < 10; i++) { // pulse weapon
+			for (int i = 0; i < 10; i++) {
+				 // rocket weapon
+				Sprite *rocket = new Sprite(this, file + "rocket.bmp", 181 - (i * 9), 351);
+				rockets.push_back(rocket);
+				 // pulse weapon
+				Sprite *pulse2 = new Sprite(this, file + "pulse2.bmp", 181 - (i * 9), 351);
+				sPulse.push_back(pulse2);
+				 // beam weapon
 				Image *e = new Image(this, file + "energy.bmp");
 				energy.push_back(e);
-			}
-			for (int i = 0; i < 10; i++) { // pulse weapon
 				Image *e2 = new Image(this, file + "energy2.bmp");
 				energy2.push_back(e2);
 			}
+			beam = new Sprite(this, file + "beam.bmp", -10, 0);
 			player = new Sprite(this, file + "non0.bmp", 465, 440); // non0 is a empty texture to give a hit box (i want this to change -chad)
 			temp = new Sprite(this, file + "non0.bmp", 0, 0);
 			for (int i = 0; i < 3; i++) {
 				Sprite *vehicle = new Sprite(this, file + "ship" + to_string(i + 1) + ".bmp", 78 + (47 * i), 401);
 				ship.push_back(vehicle); 
 			}
-			for (int i = 0; i < 10; i++) { // rocket weapon
-				Sprite *rocket = new Sprite(this, file + "rocket.bmp", 181 - (i * 9), 351);
-				rockets.push_back(rocket);
-			}
-			for (int i = 0; i < 10; i++) { // pulse weapon
-				Sprite *pulse2 = new Sprite(this, file + "pulse2.bmp", 181 - (i * 9), 351);
-				sPulse.push_back(pulse2);
-			}
-			beam = new Sprite(this, file + "beam.bmp", -10, 0);
 			for (int i = 0; i < troops; i++) {
 				Sprite *enemy = new Sprite(this, file + "grunt.bmp", 325 + ((i * 40) - (320 * (i / 8))), -230 + (42 * (i / 8)));
 				grunt.push_back(enemy);
-			}
-			for (int i = 0; i < troops; i++) {
 				Sprite *pulse = new Sprite(this, file + "pulse.bmp", grunt[i]->posX, grunt[i]->posY);
 				gPulse.push_back(pulse);
 			}
-			Mix_VolumeMusic(50);
-			Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
 		}
+		
+		Mix_FreeMusic(Mix_Music music);
 		
 		void loop() {
 			SDL_Event event;
@@ -141,6 +163,10 @@ class NewGame:public Game {
 			bool running = true;
 			bool reset = false;
 			bool godmode = false;
+			bool muted = false;
+			int volumeMusic = 5;
+			int volumeSFX = 5;
+			int volumeMute = 0;
 			string room = "title";
 			int step = -30;			//ticks
 			int screenScroll = 0;
@@ -156,6 +182,7 @@ class NewGame:public Game {
 			int wave = 1;
 			int hero = 24;			//active enemy ship
 			int gameOver = 0;
+			int coolDown = 0;
 			
 			//initialize weapon testing
 			for(int i = 0; i < 3; i++)
@@ -171,11 +198,11 @@ class NewGame:public Game {
 			
 			
 			while(running) {
+				if(coolDown > 0)
+					coolDown--;
 				if(SDL_PollEvent(&event))
-					if(event.type == SDL_QUIT) {
-						Mix_FreeMusic(music);
+					if(event.type == SDL_QUIT)
 						running = false;
-					}
 					if(event.type == SDL_KEYDOWN) {
 						if(event.key.keysym.sym == SDLK_p)
 							if(room == "level" || room == "pause") {
@@ -219,6 +246,7 @@ class NewGame:public Game {
 									beam->active = true;
 									charge = 0;
 									phase = 0;
+									Mix_PlayChannel( -1, beamS, 0 );
 								}
 							swap(event, SDLK_q, 0, ship, player, temp);
 							swap(event, SDLK_w, 1, ship, player, temp);
@@ -247,6 +275,7 @@ class NewGame:public Game {
 												rockets[i]->posY = player->posY + 3;
 												rockets[i]->active = true;
 												fired = true;
+												Mix_PlayChannel( -1, rocketS, 0 );
 											}
 								}
 							if(player->weapon == 1)
@@ -259,6 +288,7 @@ class NewGame:public Game {
 												sPulse[i]->posY = player->posY + 3;
 												sPulse[i]->active = true;
 												fired = true;
+												Mix_PlayChannel( -1, pulseS, 0 );
 											}
 								}
 							if(player->weapon == 2)
@@ -267,6 +297,7 @@ class NewGame:public Game {
 									beam->active = true;
 									charge = 0;
 									phase = 0;
+									Mix_PlayChannel( -1, beamS, 0 );
 								}
 							swap(event, SDLK_q, 0, ship, player, temp);
 							swap(event, SDLK_w, 1, ship, player, temp);
@@ -351,10 +382,50 @@ class NewGame:public Game {
 							room = "option";
 							Mix_PlayChannel( -1, selectS, 0 );
 						}
+					if (mouseCollision(downMusicButton, event) && room == "option" && coolDown == 0)
+						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+							if(volumeMusic >= 1)
+								volumeMusic--;
+							coolDown = 9;
+							Mix_PlayChannel( -1, selectS, 0 );
+						}
+					if (mouseCollision(upMusicButton, event) && room == "option" && coolDown == 0)
+						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+							if(volumeMusic <= 9)
+								volumeMusic++;
+							coolDown = 9;
+							Mix_PlayChannel( -1, selectS, 0 );
+						}
+					if (mouseCollision(downSFXButton, event) && room == "option" && coolDown == 0)
+						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+							if(volumeSFX >= 1)
+								volumeSFX--;
+							coolDown = 9;
+							Mix_PlayChannel( -1, selectS, 0 );
+						}
+					if (mouseCollision(upSFXButton, event) && room == "option" && coolDown == 0)
+						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+							if(volumeSFX <= 9)
+								volumeSFX++;
+							coolDown = 9;
+							Mix_PlayChannel( -1, selectS, 0 );
+						}
 					if (mouseCollision(controlsButton, event) && room == "title")
 						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
 							room = "control";
 							Mix_PlayChannel( -1, selectS, 0 );
+						}
+					if (mouseCollision(speakerButton, event) && muted == false && coolDown == 0)
+						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+							muted = true;
+							Mix_PlayChannel( -1, selectS, 0 );
+							coolDown = 9;
+						}
+					if (mouseCollision(muteButton, event) && muted == true && coolDown == 0)
+						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+							muted = false;
+							Mix_PlayChannel( -1, selectS, 0 );
+							coolDown = 9;
 						}
 					if (mouseCollision(xButton, event) && room != "title")
 						if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
@@ -378,7 +449,24 @@ class NewGame:public Game {
 				
 				//bgm
 				if( Mix_PlayingMusic() == 0 )
-					Mix_PlayMusic( music, -1 );
+					Mix_PlayMusic( music, -1);
+					
+				//check volume
+				if(muted == true) {
+					Mix_VolumeMusic(0);
+					Mix_VolumeChunk(rocketS, 0);
+					Mix_VolumeChunk(pulseS, 0);
+					Mix_VolumeChunk(beamS, 0);
+					Mix_VolumeChunk(collisionS, 0);
+					Mix_VolumeChunk(selectS, 0);
+				} else {
+					Mix_VolumeMusic(volumeMusic * 2);
+					Mix_VolumeChunk(rocketS, (volumeSFX * 1));
+					Mix_VolumeChunk(pulseS, (volumeSFX * 1));
+					Mix_VolumeChunk(beamS, (volumeSFX * 1));
+					Mix_VolumeChunk(collisionS, (volumeSFX * 2));
+					Mix_VolumeChunk(selectS, (volumeSFX * 4));
+				}
 				
 				if(room == "title") {
 					background->render(this);
@@ -387,12 +475,34 @@ class NewGame:public Game {
 					trainingButton->render(this, 399, 320);
 					optionsButton->render(this, 399, 362);
 					controlsButton->render(this, 399, 404);
+					if (muted == true)
+						muteButton->render(this, 60, 20);
+					else
+						speakerButton->render(this, 60, 20);
 				} else if(room == "option") {
 					optionsMenu->render(this);
 					xButton->render(this, 20, 20);
+					if (muted == true)
+						muteButton->render(this, 60, 20);
+					else
+						speakerButton->render(this, 60, 20);
+					upMusicButton->render(this, 696, 235);
+					downMusicButton->render(this, 234, 235);
+					upSFXButton->render(this, 696, 374);
+					downSFXButton->render(this, 234, 374);
+					for(int i = 0; i < 10; i++) {
+						if (i <= (volumeMusic - 1))
+							musicLight[i]->render(this, 278 + (i * 42), 238);
+						if (i <= (volumeSFX - 1))
+							sfxLight[i]->render(this, 278 + (i * 42), 377);
+					}
 				} else if(room == "control") {
 					controlsMenu->render(this);
 					xButton->render(this, 20, 20);
+					if (muted == true)
+						muteButton->render(this, 60, 20);
+					else
+						speakerButton->render(this, 60, 20);
 				} else if(room == "level") {
 					if(!(step % 60)) //enemy drift
 						dir *= 1;
@@ -437,8 +547,6 @@ class NewGame:public Game {
 							charge++;
 					if(phase > 5)
 						beam->active = false;
-					else
-						Mix_PlayChannel( -1, rocketS, 0 );
 					if(hero < 24)
 						if(grunt[hero]->alive == true) { //active enemy path
 							grunt[hero]->posY += 4;
@@ -454,6 +562,7 @@ class NewGame:public Game {
 										gPulse[hero]->posX = grunt[hero]->posX + 10;
 										gPulse[hero]->posY = grunt[hero]->posY + 10;
 										gPulse[hero]->active = true;
+										Mix_PlayChannel( -1, pulseS, 0 );
 									}
 							}
 							if(grunt[hero]->posY < (70 + (42 * (hero / 8))) || grunt[hero]->posY > 480) {
@@ -561,6 +670,10 @@ class NewGame:public Game {
 						}
 					}
 					xButton->render(this, 20, 20);
+					if (muted == true)
+						muteButton->render(this, 60, 20);
+					else
+						speakerButton->render(this, 60, 20);
 					//increment
 					step++;
 					spawning++;
@@ -705,8 +818,6 @@ class NewGame:public Game {
 							charge += 50;
 					if(phase > 5)
 						beam->active = false;
-					else
-						Mix_PlayChannel( -1, rocketS, 0 );
 					if(hero < 24)
 						if(grunt[hero]->alive == true) { //active enemy path
 							grunt[hero]->posY += 4;
@@ -811,6 +922,10 @@ class NewGame:public Game {
 						board /= 10;
 					}
 					xButton->render(this, 20, 20);
+					if (muted == true)
+						muteButton->render(this, 60, 20);
+					else
+						speakerButton->render(this, 60, 20);
 					//increment
 					step++;
 					spawning++;
@@ -915,6 +1030,10 @@ class NewGame:public Game {
 								energy[i]->render(this, 181 - (i * 9), 351);
 					}
 					xButton->render(this, 20, 20);
+					if (muted == true)
+						muteButton->render(this, 60, 20);
+					else
+						speakerButton->render(this, 60, 20);
 				} else if(room == "over") {
 					screen->render(this, 300, -540 + screenScroll);
 					gameoverButton->render(this, 348, 143);
@@ -927,11 +1046,16 @@ class NewGame:public Game {
 						board /= 10;
 					}
 					xButton->render(this, 20, 20);
+					if (muted == true)
+						muteButton->render(this, 60, 20);
+					else
+						speakerButton->render(this, 60, 20);
 				}
 				SDL_RenderPresent(renderer);
 				SDL_Delay(16);
 			}
 		}
+		Mix_CloseAudio();
 };
 
 int  main(int argc, char* argv[]) {
